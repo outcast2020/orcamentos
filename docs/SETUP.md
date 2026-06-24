@@ -6,13 +6,14 @@
 2. Substitua o conteúdo do editor pelo arquivo `Code.gs` deste projeto.
 3. Salve o projeto.
 4. Execute manualmente a função `setupPlanilha`.
-5. Autorize o acesso solicitado à Planilha e ao Drive.
+5. Autorize o acesso solicitado à Planilha, Drive, Gmail e gatilhos.
 
 O setup usa inicialmente:
 
 - planilha: `1cQHG_boOZcptbIVsF-TEElBGJeTSzQ3Zyl934NF9L8s`;
 - pasta de PDFs no Drive: `1dP_N7KUNf96EEGe3TYd_6npisjGm3jac`;
 - pasta de rascunhos JSON: `1c9iyM1PJPAlzLL3sFqsjAIwXrdCUgesc`;
+- pasta de aceitos / execução: `1SsCPoXW1TWtKS8ZQKH8uvnKHO11j5b_m`;
 - aba: `Orçamentos`;
 - primeiro fólio: `00010`.
 
@@ -34,7 +35,8 @@ No login, a senha é enviada uma única vez por HTTPS ao Apps Script e trocada
 por uma sessão temporária. O navegador não guarda nem repete a senha nas
 operações seguintes.
 
-Os IDs também podem ser substituídos pelas propriedades `SHEET_ID`, `FOLDER_ID` e `DRAFT_FOLDER_ID`, caso o destino mude no futuro.
+Os IDs também podem ser substituídos pelas propriedades `SHEET_ID`,
+`FOLDER_ID`, `DRAFT_FOLDER_ID` e `EXECUTION_FOLDER_ID`, caso o destino mude.
 
 O `setupPlanilha` também cria:
 
@@ -54,6 +56,7 @@ O registro de execução deve indicar:
 - planilha configurada;
 - pasta configurada;
 - pasta de rascunhos configurada;
+- pasta de execução configurada;
 - senha configurada;
 - aba encontrada;
 - próximo fólio disponível.
@@ -72,7 +75,12 @@ A API pode ficar publicamente acessível porque as operações de leitura e grav
 Mais precisamente, após o login as operações exigem um token temporário de
 sessão. Conhecer a URL `/exec` não concede acesso aos registros.
 
-Sempre que alterar `Code.gs`, crie uma nova versão da implantação.
+Sempre que alterar `Code.gs`, edite a implantação existente e selecione uma
+**nova versão**. A URL `/exec` pode continuar a mesma.
+
+Para que os rascunhos sejam criados na caixa
+`contato@cordel2pontozero.com`, implante o Web App por essa conta ou configure
+esse endereço como alias autorizado da conta que executa o Apps Script.
 
 ## 5. Conectar o frontend
 
@@ -92,18 +100,23 @@ Faça este percurso:
 
 1. entrar com a senha;
 2. criar um orçamento com dois itens;
-3. alternar entre os visuais Impressão e Digital;
-4. salvar como rascunho;
+3. baixar o PDF e a imagem e conferir se ambos estão completos;
+4. salvar como rascunho e tentar clicar novamente durante a gravação;
 5. conferir o arquivo `Rascunho_00010_Cliente.json` na pasta de rascunhos;
 6. abrir a aba Rascunhos e retomar;
-7. marcar a confirmação de envio;
-8. salvar como enviado;
-9. conferir o PDF na pasta do Drive;
+7. informar o e-mail do cliente e marcar a confirmação de envio;
+8. salvar como enviado e conferir o PDF na pasta do Drive;
+9. usar **Abrir no Gmail** e conferir mensagem, destinatário e anexo;
 10. abrir a aba Enviados e marcar como aceito;
-11. informar pagamento e data em Aceitos / execução;
-12. conferir a linha correspondente na planilha.
-13. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
+11. conferir o arquivo na pasta de execução e as notificações enviadas;
+12. informar pagamento e data em Aceitos / execução;
+13. conferir a linha correspondente na planilha;
+14. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
     remoção de um CNAE.
+
+Depois da primeira atualização, execute uma vez a função `limparDuplicados`
+no editor do Apps Script. Ela mantém o registro mais recente de cada fólio e
+move arquivos repetidos com o mesmo nome para a lixeira.
 
 ## 7. Publicar no GitHub Pages
 
@@ -120,9 +133,10 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 - Não renomeie os cabeçalhos da aba `Orçamentos`.
 - Não publique a senha em commits, capturas de tela ou documentação.
 - Ao mudar o percentual de ISS no formulário, o valor fica registrado em cada orçamento.
-- O Drive recebe uma nova cópia do PDF sempre que um orçamento enviado é salvo novamente.
+- Ao salvar novamente, a cópia anterior do PDF é substituída para evitar duplicados.
 - O arquivo JSON do rascunho é atualizado no mesmo arquivo sempre que houver novo salvamento.
-- O fólio é protegido por bloqueio no Apps Script para evitar números repetidos em salvamentos simultâneos.
+- O fólio é protegido por bloqueio e cada gravação tem um identificador idempotente.
+- O `setupPlanilha` cria um gatilho diário para verificar follow-ups vencidos.
 - `Code.gs` está no `.gitignore`; atualize-o diretamente no Google Apps Script.
 - Integrações futuras permanecem invisíveis na interface e desativadas no
   backend até configuração e implementação expressas.

@@ -133,6 +133,19 @@
               </div>
 
               <div class="field">
+                <label for="emailCliente">E-mail do cliente</label>
+                <input
+                  id="emailCliente"
+                  name="emailCliente"
+                  type="email"
+                  autocomplete="email"
+                  placeholder="cliente@instituicao.com"
+                  maxlength="180"
+                >
+                <small class="field-help">Necessário para preparar o envio pelo Gmail.</small>
+              </div>
+
+              <div class="field">
                 <label for="cnae">Atividade / CNAE</label>
                 <select id="cnae" name="cnae" required></select>
               </div>
@@ -293,13 +306,9 @@
               <strong>Prévia em tempo real</strong>
             </div>
             <div class="preview-actions">
-              <label class="theme-control" for="visualTheme">
-                Visual
-                <select id="visualTheme">
-                  <option value="print">Impressão</option>
-                  <option value="digital">Digital</option>
-                </select>
-              </label>
+              <button class="button button-secondary button-small" id="downloadImageButton" type="button">
+                Baixar imagem
+              </button>
               <button class="button button-dark button-small" id="downloadPdfButton" type="button">
                 Baixar PDF
               </button>

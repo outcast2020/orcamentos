@@ -6,13 +6,11 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 
 ## Prévia
 
-| Impressão | Digital |
-|---|---|
-| ![Visual para impressão](docs/screenshots/gerador-impressao.png) | ![Visual digital](docs/screenshots/gerador-digital.png) |
+![Visual para impressão](docs/screenshots/gerador-impressao.png)
 
 ## O que o sistema faz
 
-- gera orçamento com visual para **impressão** ou **envio digital**;
+- gera orçamento em visual único, preparado para impressão;
 - calcula automaticamente subtotal, ISS de 5% e valor total;
 - aceita vários itens de custo;
 - oferece todos os CNAEs cadastrados e a opção “Outro CNAE”;
@@ -23,7 +21,11 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 - mantém cada rascunho também como arquivo JSON simples em uma pasta do Drive;
 - registra enviados, aceitos para execução, pagamento e data;
 - exige confirmação de envio por `contato@cordel2pontozero.com`;
-- gera PDF e, ao salvar como enviado, guarda uma cópia na pasta do Drive;
+- gera PDF e imagem PNG;
+- cria no Gmail um rascunho com mensagem e PDF anexado;
+- alerta a equipe após 5 dias úteis sem retorno do cliente;
+- cria automaticamente o pacote na pasta de execução e notifica coordenação e produção;
+- evita gravações duplicadas com bloqueio no frontend e idempotência no backend;
 - mantém a assinatura da equipe fixa no documento;
 - usa a fonte Cordelina nos títulos como elemento da identidade visual;
 - protege os dados do backend com senha validada no Apps Script.
@@ -35,8 +37,8 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 ```text
 Recurso-Web/
 ├── index.html          Interface do gerador
-├── style.css           Visual responsivo e temas do orçamento
-├── app.js              Formulário, cálculos, PDF e integração
+├── style.css           Visual responsivo e impressão
+├── app.js              Formulário, cálculos, PDF, imagem e integração
 ├── config.js           URL pública do Web App
 ├── integrations.js     Contrato público, sem segredos, para integrações futuras
 ├── Code.gs             Backend local do Google Apps Script (ignorado pelo Git)
@@ -82,7 +84,8 @@ de integrações.
 - html2pdf.js 0.10.1, incluído localmente para geração do PDF;
 - Google Apps Script para a API;
 - Google Sheets para registros;
-- Google Drive para os PDFs;
+- Google Drive para PDFs, rascunhos e arquivos de execução;
+- Gmail para rascunhos de envio e notificações internas;
 - arquivos JSON no Google Drive para cópia e retomada dos rascunhos;
 - GitHub Pages para hospedagem do frontend.
 

@@ -1,6 +1,7 @@
 const CONFIG = window.CORDEL_CONFIG || {};
 const GAS_URL = String(CONFIG.GAS_URL || '').trim();
 const OFFICIAL_SITE = CONFIG.OFFICIAL_SITE || 'https://www.cordel2pontozero.com';
+const CONTACT_EMAIL = 'contato@cordel2pontozero.com';
 
 const DEFAULT_CNAES = [
   {
@@ -106,6 +107,8 @@ const state = {
   folio: '',
   draftFileId: '',
   draftUrl: '',
+  saving: false,
+  saveOperationId: '',
   records: [],
   suggestions: [],
   items: [newItem()],
@@ -176,6 +179,7 @@ function cacheElements() {
     'autorOrcamento',
     'dataEmissao',
     'solicitadoPor',
+    'emailCliente',
     'cnae',
     'customCnaeFields',
     'customCnaeCode',
@@ -199,7 +203,7 @@ function cacheElements() {
     'saveDraftButton',
     'saveSentButton',
     'statusMessage',
-    'visualTheme',
+    'downloadImageButton',
     'downloadPdfButton',
     'quoteDocument',
     'docFolio',
@@ -253,6 +257,7 @@ function bindEvents() {
   elements.addItemButton.addEventListener('click', addItem);
   elements.saveDraftButton.addEventListener('click', () => saveQuote('Rascunho'));
   elements.saveSentButton.addEventListener('click', () => saveQuote('Enviado'));
+  elements.downloadImageButton.addEventListener('click', downloadImage);
   elements.downloadPdfButton.addEventListener('click', downloadPdf);
   elements.cnae.addEventListener('change', () => {
     updateCustomCnaeFields();
@@ -260,7 +265,6 @@ function bindEvents() {
     updatePreview();
   });
   elements.descriptionSuggestion.addEventListener('change', applyDescriptionSuggestion);
-  elements.visualTheme.addEventListener('change', updateTheme);
 
   elements.quoteForm.addEventListener('input', updatePreview);
   elements.quoteForm.addEventListener('change', updatePreview);
@@ -610,7 +614,6 @@ function updatePreview() {
 
   renderPreviewItems();
   renderConditions();
-  updateTheme();
 }
 
 function renderPreviewItems() {
@@ -636,6 +639,7 @@ function renderConditions() {
     ['Realização prevista', elements.dataRealizacao.value.trim()],
     ['Local', elements.localRealizacao.value.trim()],
     ['Pagamento', elements.condicaoPagamento.value.trim()],
+    ['E-mail para resposta', CONTACT_EMAIL],
     ['Validade do orçamento', `${parseInt(elements.validadeDias.value, 10) || 20} dias corridos a partir da emissão.`]
   ].filter(([, value]) => value);
 
@@ -662,24 +666,20 @@ function renderConditions() {
   elements.docConditionsSection.hidden = !conditions.length && !exclusions;
 }
 
-function updateTheme() {
-  const isDigital = elements.visualTheme.value === 'digital';
-  elements.quoteDocument.classList.toggle('theme-digital', isDigital);
-  elements.quoteDocument.classList.toggle('theme-print', !isDigital);
-}
-
 function collectQuoteData(status) {
   const totals = calculateTotals();
   return {
     folio: state.folio,
     draftFileId: state.draftFileId,
     urlRascunho: state.draftUrl,
+    operationId: state.saveOperationId,
     status,
-    temaVisual: elements.visualTheme.value,
+    temaVisual: 'print',
     dataEmissao: elements.dataEmissao.value,
     autor: elements.autorOrcamento.value,
     cnae: getSelectedCnae(),
     solicitadoPor: elements.solicitadoPor.value.trim(),
+    emailCliente: elements.emailCliente.value.trim(),
     tituloServico: elements.tituloServico.value.trim(),
     descricaoServico: elements.descricaoServico.value.trim(),
     itens: state.items.map((item) => ({
@@ -738,6 +738,13 @@ function validateQuote(status) {
       'error'
     );
     elements.enviadoEmail.focus();
+    return false;
+  }
+
+  if (status === 'Enviado' && !elements.emailCliente.value.trim()) {
+    elements.emailCliente.setAttribute('aria-invalid', 'true');
+    elements.emailCliente.focus();
+    setMessage(elements.statusMessage, 'Informe o e-mail do cliente antes de registrar o envio.', 'error');
     return false;
   }
 
@@ -815,10 +822,13 @@ function isBackendConfigured() {
 }
 
 async function saveQuote(status) {
+  if (state.saving) return;
   if (!validateQuote(status)) return;
 
   const button = status === 'Rascunho' ? elements.saveDraftButton : elements.saveSentButton;
-  setBusy(button, true, status === 'Rascunho' ? 'Salvando...' : 'Gerando e salvando...');
+  state.saving = true;
+  state.saveOperationId = state.saveOperationId || createOperationId();
+  setQuoteSaving(true, button, status === 'Rascunho' ? 'Salvando...' : 'Gerando e salvando...');
   setMessage(elements.statusMessage, 'Preparando o orçamento...', '');
 
   try {
@@ -836,6 +846,7 @@ async function saveQuote(status) {
     state.folio = result.folio;
     state.draftFileId = result.draftFileId || state.draftFileId;
     state.draftUrl = result.urlRascunho || state.draftUrl;
+    state.saveOperationId = '';
     elements.docFolio.textContent = state.folio;
     elements.editorTitle.textContent = `Orçamento ${state.folio}`;
     setMessage(
@@ -854,7 +865,8 @@ async function saveQuote(status) {
   } catch (error) {
     setMessage(elements.statusMessage, friendlyError(error, 'Não foi possível salvar o orçamento.'), 'error');
   } finally {
-    setBusy(button, false, status === 'Rascunho' ? 'Salvar rascunho' : 'Salvar como enviado');
+    state.saving = false;
+    setQuoteSaving(false);
   }
 }
 
@@ -867,45 +879,168 @@ async function downloadPdf() {
     if (typeof window.html2pdf !== 'function') {
       throw new Error('O gerador de PDF não foi carregado. Verifique sua conexão.');
     }
-    await createPdfWorker().save();
+    const blob = await createPdfBlob();
+    if (!blob || blob.size < 1000) {
+      throw new Error('O PDF gerado ficou vazio. Tente novamente.');
+    }
+    downloadBlob(blob, exportFilename('pdf'));
     setMessage(elements.statusMessage, 'PDF gerado com sucesso.', 'success');
   } catch (error) {
     setMessage(elements.statusMessage, friendlyError(error, 'Não foi possível gerar o PDF.'), 'error');
   } finally {
-    elements.quoteDocument.classList.remove('pdf-rendering');
     setBusy(elements.downloadPdfButton, false, 'Baixar PDF');
   }
 }
 
-function createPdfWorker() {
-  const name = sanitizeFilename(elements.solicitadoPor.value || 'Cordel');
-  const folio = state.folio || 'Previa';
-  elements.quoteDocument.classList.add('pdf-rendering');
-  return window.html2pdf()
-    .set({
-      margin: 0,
-      filename: `Orcamento_${folio}_${name}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: elements.visualTheme.value === 'digital' ? '#151612' : '#fffefb'
-      },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: ['css', 'legacy'] }
-    })
-    .from(elements.quoteDocument);
+async function downloadImage() {
+  if (!validateQuote('Rascunho')) return;
+  setBusy(elements.downloadImageButton, true, 'Gerando...');
+  setMessage(elements.statusMessage, 'Gerando a imagem...', '');
+
+  try {
+    const blob = await createImageBlob();
+    if (!blob || blob.size < 1000) {
+      throw new Error('A imagem gerada ficou vazia. Tente novamente.');
+    }
+    downloadBlob(blob, exportFilename('png'));
+    setMessage(elements.statusMessage, 'Imagem gerada com sucesso.', 'success');
+  } catch (error) {
+    setMessage(elements.statusMessage, friendlyError(error, 'Não foi possível gerar a imagem.'), 'error');
+  } finally {
+    setBusy(elements.downloadImageButton, false, 'Baixar imagem');
+  }
 }
 
 async function createPdfBlob() {
   if (typeof window.html2pdf !== 'function') {
     throw new Error('O gerador de PDF não foi carregado.');
   }
+
+  const exportDocument = await prepareExportDocument();
   try {
-    return await createPdfWorker().outputPdf('blob');
+    return await window.html2pdf()
+      .set(pdfOptions())
+      .from(exportDocument.element)
+      .outputPdf('blob');
   } finally {
-    elements.quoteDocument.classList.remove('pdf-rendering');
+    exportDocument.cleanup();
   }
+}
+
+async function createImageBlob() {
+  if (typeof window.html2pdf !== 'function') {
+    throw new Error('O gerador de imagem não foi carregado.');
+  }
+
+  const exportDocument = await prepareExportDocument();
+  try {
+    const worker = window.html2pdf()
+      .set(pdfOptions())
+      .from(exportDocument.element)
+      .toCanvas();
+    const canvas = await worker.get('canvas');
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => blob ? resolve(blob) : reject(new Error('Não foi possível finalizar a imagem.')),
+        'image/png'
+      );
+    });
+  } finally {
+    exportDocument.cleanup();
+  }
+}
+
+function pdfOptions() {
+  return {
+    margin: 0,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#fffefb',
+      logging: false,
+      scrollX: 0,
+      scrollY: 0
+    },
+    jsPDF: {
+      unit: 'mm',
+      format: 'a4',
+      orientation: 'portrait',
+      compress: true
+    },
+    pagebreak: {
+      mode: ['css', 'legacy'],
+      avoid: ['tr', '.document-header', '.document-signature']
+    }
+  };
+}
+
+async function prepareExportDocument() {
+  updatePreview();
+  if (document.fonts?.ready) await document.fonts.ready;
+
+  const host = document.createElement('div');
+  host.setAttribute('aria-hidden', 'true');
+  Object.assign(host.style, {
+    position: 'absolute',
+    zIndex: '-1',
+    top: '0',
+    left: '0',
+    width: '210mm',
+    minHeight: '297mm',
+    overflow: 'visible',
+    pointerEvents: 'none',
+    background: '#fffefb'
+  });
+
+  const clone = elements.quoteDocument.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.classList.remove('theme-digital');
+  clone.classList.add('theme-print', 'pdf-rendering', 'export-rendering');
+  clone.querySelectorAll('[id]').forEach((element) => element.removeAttribute('id'));
+  host.appendChild(clone);
+  document.body.appendChild(host);
+
+  await Promise.all(
+    [...clone.querySelectorAll('img')].map(async (image) => {
+      if (!image.complete) {
+        await new Promise((resolve, reject) => {
+          image.addEventListener('load', resolve, { once: true });
+          image.addEventListener('error', reject, { once: true });
+        });
+      }
+      if (typeof image.decode === 'function') {
+        await image.decode().catch(() => {});
+      }
+    })
+  );
+
+  await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+  return {
+    element: clone,
+    cleanup() {
+      host.remove();
+    }
+  };
+}
+
+function exportFilename(extension) {
+  const name = sanitizeFilename(elements.solicitadoPor.value || 'Cordel');
+  const folio = state.folio || 'Previa';
+  return `Orcamento_${folio}_${name}.${extension}`;
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 async function runPostSaveIntegrations(context) {
@@ -1040,9 +1175,18 @@ function createRecordCard(record, view) {
   const card = document.createElement('article');
   card.className = 'record-card';
 
+  const clientBlock = recordBlock('Cliente', data.solicitadoPor || record.Cliente || '—', 'record-client');
+  if (view === 'enviados' && isFollowUpDue(data, record)) {
+    card.classList.add('has-follow-up');
+    const alert = document.createElement('span');
+    alert.className = 'follow-up-alert';
+    alert.textContent = 'Retorno pendente há 5 dias úteis';
+    clientBlock.appendChild(alert);
+  }
+
   card.append(
     recordBlock('Fólio', data.folio || record.Folio || '—', 'record-folio'),
-    recordBlock('Cliente', data.solicitadoPor || record.Cliente || '—', 'record-client'),
+    clientBlock,
     recordBlock('Atualizado em', record['Atualizado em'] || record['Data Criação'] || '—', 'record-meta')
   );
 
@@ -1081,9 +1225,29 @@ function createRecordActions(record, data, view) {
   actions.appendChild(openButton);
 
   if (view === 'enviados') {
+    const emailButton = actionButton('Abrir no Gmail', 'button-dark');
+    emailButton.addEventListener('click', () => openQuoteEmail(data.folio, emailButton));
+    actions.appendChild(emailButton);
+
     const acceptButton = actionButton('Marcar aceito', 'button-primary');
-    acceptButton.addEventListener('click', () => updateRecordStatus(data.folio, 'Aceito'));
+    acceptButton.addEventListener('click', async () => {
+      if (!window.confirm(`Enviar o orçamento ${data.folio} para execução?`)) return;
+      setBusy(acceptButton, true, 'Enviando...');
+      try {
+        await updateRecordStatus(data.folio, 'Aceito');
+      } catch (error) {
+        elements.recordsFeedback.hidden = false;
+        setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível enviar para execução.'), 'error');
+        setBusy(acceptButton, false, 'Marcar aceito');
+      }
+    });
     actions.appendChild(acceptButton);
+
+    if (!Boolean(data.retornoCliente) && String(record['Retorno Cliente?']).toLowerCase() !== 'sim') {
+      const returnButton = actionButton('Registrar retorno', 'button-secondary');
+      returnButton.addEventListener('click', () => registerClientReturn(data.folio, returnButton));
+      actions.appendChild(returnButton);
+    }
   }
 
   const draftUrl = record['URL Rascunho'] || data.urlRascunho;
@@ -1144,6 +1308,8 @@ function createPaymentEditor(record, data) {
       save.textContent = 'Tentar novamente';
     } finally {
       save.disabled = false;
+      save.classList.remove('is-loading');
+      save.setAttribute('aria-busy', 'false');
     }
   });
 
@@ -1151,6 +1317,18 @@ function createPaymentEditor(record, data) {
   open.addEventListener('click', () => loadQuote(record));
 
   editor.append(label, date, save, open);
+
+  const executionUrl = record['URL Execução'] || data.urlExecucao;
+  if (executionUrl) {
+    const executionLink = document.createElement('a');
+    executionLink.className = 'button button-dark';
+    executionLink.href = executionUrl;
+    executionLink.target = '_blank';
+    executionLink.rel = 'noopener';
+    executionLink.textContent = 'Execução';
+    editor.appendChild(executionLink);
+  }
+
   return editor;
 }
 
@@ -1165,10 +1343,12 @@ function actionButton(text, variant) {
 async function updateRecordStatus(folio, newStatus, paid, paymentDate, refreshView = true) {
   if (!folio) throw new Error('Fólio não encontrado.');
 
+  let result;
   if (state.localMode) {
     updateLocalStatus(folio, newStatus, paid, paymentDate);
+    result = { sucesso: true, folio };
   } else {
-    await callApi('atualizarStatus', {
+    result = await callApi('atualizarStatus', {
       folio,
       novoStatus: newStatus,
       pago: paid,
@@ -1178,6 +1358,71 @@ async function updateRecordStatus(folio, newStatus, paid, paymentDate, refreshVi
 
   await refreshRecordsCache();
   if (refreshView) showView(newStatus === 'Aceito' ? 'aceitos' : 'enviados');
+  return result;
+}
+
+async function openQuoteEmail(folio, button) {
+  if (state.localMode) {
+    setMessage(elements.recordsFeedback, 'O Gmail exige conexão com o backend.', 'error');
+    return;
+  }
+
+  const popup = window.open('about:blank', '_blank');
+  setBusy(button, true, 'Preparando...');
+
+  try {
+    const result = await callApi('criarRascunhoEmail', { folio });
+    if (!result.urlGmail) throw new Error('O backend não retornou o rascunho do Gmail.');
+    if (popup) {
+      popup.location.href = result.urlGmail;
+    } else {
+      window.location.href = result.urlGmail;
+    }
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, `Rascunho do orçamento ${folio} criado no Gmail.`, 'success');
+  } catch (error) {
+    popup?.close();
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível preparar o e-mail.'), 'error');
+  } finally {
+    setBusy(button, false, 'Abrir no Gmail');
+  }
+}
+
+async function registerClientReturn(folio, button) {
+  setBusy(button, true, 'Registrando...');
+  try {
+    if (state.localMode) {
+      const records = readLocalRecords();
+      const record = records.find((item) => item.Folio === folio);
+      if (!record) throw new Error('Fólio não encontrado.');
+      const data = recordData(record);
+      data.retornoCliente = true;
+      data.dataRetornoCliente = todayIso();
+      record['Retorno Cliente?'] = 'Sim';
+      record.JSON_Dados = JSON.stringify(data);
+      localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records));
+    } else {
+      await callApi('registrarRetorno', { folio });
+    }
+    await refreshRecordsCache();
+    showView('enviados');
+  } catch (error) {
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível registrar o retorno.'), 'error');
+    setBusy(button, false, 'Registrar retorno');
+  }
+}
+
+function isFollowUpDue(data, record) {
+  if (Boolean(data.retornoCliente) || String(record['Retorno Cliente?']).toLowerCase() === 'sim') {
+    return false;
+  }
+
+  const value = data.followUpDate || record['Follow-up em'];
+  if (!value) return false;
+  const due = new Date(`${normalizeDateInput(value)}T23:59:59`);
+  return !Number.isNaN(due.getTime()) && due.getTime() <= Date.now();
 }
 
 function loadQuote(record) {
@@ -1190,6 +1435,7 @@ function loadQuote(record) {
   elements.autorOrcamento.value = data.autor || elements.autorOrcamento.options[0].value;
   elements.dataEmissao.value = normalizeDateInput(data.dataEmissao) || todayIso();
   elements.solicitadoPor.value = data.solicitadoPor || '';
+  elements.emailCliente.value = data.emailCliente || '';
   setCnaeValue(data.cnae || '');
   elements.tituloServico.value = data.tituloServico || '';
   elements.descricaoServico.value = data.descricaoServico || '';
@@ -1200,7 +1446,6 @@ function loadQuote(record) {
   elements.condicaoPagamento.value = data.condicaoPagamento || 'Via Pix (chave CNPJ), mediante emissão de nota fiscal.';
   elements.naoInclusos.value = data.naoInclusos || '';
   elements.enviadoEmail.checked = Boolean(data.enviadoEmail) || String(record['Enviado Email?']).toLowerCase() === 'sim';
-  elements.visualTheme.value = data.temaVisual === 'digital' ? 'digital' : 'print';
   elements.editorTitle.textContent = `Orçamento ${state.folio}`;
 
   renderItemsEditor();
@@ -1247,6 +1492,7 @@ function resetQuote(confirmReset) {
   state.folio = '';
   state.draftFileId = '';
   state.draftUrl = '';
+  state.saveOperationId = '';
   state.items = [newItem()];
   elements.quoteForm.reset();
   elements.dataEmissao.value = todayIso();
@@ -1254,7 +1500,6 @@ function resetQuote(confirmReset) {
   elements.taxaISS.value = String(state.settings.issDefault);
   elements.condicaoPagamento.value = 'Via Pix (chave CNPJ), mediante emissão de nota fiscal.';
   elements.tituloServico.value = 'Minicurso de escrita criativa, literatura popular e IA generativa';
-  elements.visualTheme.value = 'print';
   elements.editorTitle.textContent = 'Novo orçamento';
   renderItemsEditor();
   updateCustomCnaeFields();
@@ -1309,6 +1554,7 @@ function saveLocalQuote(data) {
     'Data Criação': now,
     'Atualizado em': now,
     Cliente: data.solicitadoPor,
+    'Email Cliente': data.emailCliente || '',
     CNAE: data.cnae,
     Autor: data.autor,
     'Valor Total': data.valorTotal,
@@ -1317,6 +1563,9 @@ function saveLocalQuote(data) {
     'Data Pagamento': data.dataPagamento || '',
     'URL PDF': '',
     'URL Rascunho': data.urlRascunho || '',
+    'Follow-up em': data.followUpDate || '',
+    'Retorno Cliente?': data.retornoCliente ? 'Sim' : 'Não',
+    'URL Execução': data.urlExecucao || '',
     JSON_Dados: JSON.stringify(data)
   };
 
@@ -1336,7 +1585,21 @@ function saveLocalQuote(data) {
 function readLocalRecords() {
   try {
     const records = JSON.parse(localStorage.getItem(LOCAL_RECORDS_KEY) || '[]');
-    return Array.isArray(records) ? records : [];
+    if (!Array.isArray(records)) return [];
+    const unique = new Map();
+    records.forEach((record) => {
+      const folio = String(record?.Folio || recordData(record).folio || '').trim();
+      if (!folio || !unique.has(folio)) {
+        unique.set(folio || `sem-folio-${unique.size}`, record);
+        return;
+      }
+
+      const previous = unique.get(folio);
+      const previousDate = String(previous['Atualizado em'] || previous['Data Criação'] || '');
+      const currentDate = String(record['Atualizado em'] || record['Data Criação'] || '');
+      if (currentDate.localeCompare(previousDate) >= 0) unique.set(folio, record);
+    });
+    return [...unique.values()];
   } catch {
     return [];
   }
@@ -1371,12 +1634,16 @@ function recordData(record) {
       folio: record?.Folio || '',
       status: record?.Status || '',
       solicitadoPor: record?.Cliente || '',
+      emailCliente: record?.['Email Cliente'] || '',
       cnae: record?.CNAE || '',
       autor: record?.Autor || '',
       valorTotal: parseNumber(record?.['Valor Total']),
       enviadoEmail: String(record?.['Enviado Email?']).toLowerCase() === 'sim',
       pago: String(record?.['Pago?']).toLowerCase() === 'sim',
-      dataPagamento: record?.['Data Pagamento'] || ''
+      dataPagamento: record?.['Data Pagamento'] || '',
+      followUpDate: record?.['Follow-up em'] || '',
+      retornoCliente: String(record?.['Retorno Cliente?']).toLowerCase() === 'sim',
+      urlExecucao: record?.['URL Execução'] || ''
     };
   }
 }
@@ -1440,6 +1707,28 @@ function setMessage(element, message, type) {
 function setBusy(button, busy, label) {
   button.disabled = busy;
   button.textContent = label;
+  button.classList.toggle('is-loading', busy);
+  button.setAttribute('aria-busy', busy ? 'true' : 'false');
+}
+
+function setQuoteSaving(busy, activeButton, activeLabel) {
+  elements.quoteForm.setAttribute('aria-busy', busy ? 'true' : 'false');
+  elements.saveDraftButton.disabled = busy;
+  elements.saveSentButton.disabled = busy;
+  elements.newQuoteButton.disabled = busy;
+
+  if (busy && activeButton) {
+    setBusy(activeButton, true, activeLabel);
+    return;
+  }
+
+  setBusy(elements.saveDraftButton, false, 'Salvar rascunho');
+  setBusy(elements.saveSentButton, false, 'Salvar como enviado');
+}
+
+function createOperationId() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `save-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
 function friendlyError(error, fallback) {

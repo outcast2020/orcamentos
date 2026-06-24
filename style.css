@@ -81,6 +81,22 @@ button:disabled {
   opacity: 0.65;
 }
 
+.button.is-loading::before {
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: button-spin 700ms linear infinite;
+}
+
+@keyframes button-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 img {
   display: block;
   max-width: 100%;
@@ -190,12 +206,17 @@ img {
   z-index: 1000;
   inset: 0;
   display: grid;
-  place-items: center;
+  align-items: center;
+  justify-items: start;
   overflow: auto;
-  padding: 24px;
-  background:
-    linear-gradient(100deg, rgba(8, 9, 7, 0.97), rgba(8, 9, 7, 0.78)),
-    url("assets/Capa-LinkedIn.png") center / cover no-repeat;
+  padding: 24px clamp(24px, 7vw, 110px);
+  background-color: #050505;
+  background-image:
+    linear-gradient(100deg, rgba(5, 5, 5, 0.78), rgba(5, 5, 5, 0.3)),
+    url("assets/Capa-LinkedIn.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 100% 100%, contain;
 }
 
 .login-card {
@@ -210,9 +231,12 @@ img {
 }
 
 .login-logo {
-  width: 82px;
-  height: 82px;
+  width: 116px;
+  height: 116px;
   margin-bottom: 24px;
+  border-radius: 14px;
+  padding: 9px;
+  background: #fff;
   object-fit: contain;
 }
 
@@ -297,6 +321,9 @@ img {
 .brand img {
   width: 44px;
   height: 44px;
+  border-radius: 7px;
+  padding: 3px;
+  background: #fff;
   object-fit: contain;
 }
 
@@ -872,6 +899,46 @@ textarea[aria-invalid="true"] {
   line-height: 1.45;
 }
 
+.quote-document.export-rendering {
+  width: 210mm !important;
+  min-width: 210mm !important;
+  max-width: 210mm !important;
+  min-height: 296mm !important;
+  margin: 0 !important;
+  padding: 12mm 16mm 9mm !important;
+  background: #fffefb !important;
+  box-shadow: none !important;
+  color: #20211d !important;
+  font-size: 10pt !important;
+}
+
+.export-rendering .document-accent {
+  margin: 6mm 0 5mm;
+}
+
+.export-rendering .document-section {
+  margin-top: 5mm;
+}
+
+.export-rendering .document-signature {
+  margin-top: 4mm;
+}
+
+.export-rendering .document-signature img {
+  max-height: 32mm;
+}
+
+.export-rendering .document-footer {
+  margin-top: 3mm;
+}
+
+.export-rendering *,
+.export-rendering *::before,
+.export-rendering *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
 .document-header {
   display: grid;
   grid-template-columns: 35mm 1fr;
@@ -1380,6 +1447,25 @@ textarea[aria-invalid="true"] {
   box-shadow: var(--shadow-sm);
 }
 
+.record-card.has-follow-up {
+  border-color: #d98218;
+  box-shadow: 0 0 0 3px rgba(217, 130, 24, 0.1);
+}
+
+.follow-up-alert {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 6px;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--amber-soft);
+  color: #7b470b;
+  font-size: 0.66rem;
+  font-weight: 700;
+  white-space: normal;
+}
+
 .record-folio span,
 .record-client span,
 .record-meta span {
@@ -1495,6 +1581,10 @@ textarea[aria-invalid="true"] {
 }
 
 @media (max-width: 760px) {
+  .login-screen {
+    justify-items: center;
+  }
+
   .topbar {
     gap: 10px;
     padding: 8px 13px;
@@ -1765,10 +1855,14 @@ textarea[aria-invalid="true"] {
 
 @media (max-width: 480px) {
   .login-screen {
+    align-items: start;
     padding: 12px;
+    background-position: center bottom;
+    background-size: 100% 100%, 100% auto;
   }
 
   .login-card {
+    margin-top: 16px;
     padding: 28px 22px;
   }
 
