@@ -1,0 +1,95 @@
+# Cordel 2.0 — Gerador de Orçamentos
+
+Aplicação web leve para criar, salvar e acompanhar orçamentos comerciais da Cordel 2.0 Inova Simples (I.S.).
+
+O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Google Apps Script, Google Sheets e Google Drive.
+
+## Prévia
+
+| Impressão | Digital |
+|---|---|
+| ![Visual para impressão](docs/screenshots/gerador-impressao.png) | ![Visual digital](docs/screenshots/gerador-digital.png) |
+
+## O que o sistema faz
+
+- gera orçamento com visual para **impressão** ou **envio digital**;
+- calcula automaticamente subtotal, ISS de 5% e valor total;
+- aceita vários itens de custo;
+- oferece todos os CNAEs cadastrados e a opção “Outro CNAE”;
+- possui configurações discretas para alterar o ISS padrão e editar CNAEs;
+- reaproveita descrições anteriores organizadas pelo CNAE;
+- usa fólio sequencial a partir de `00010`;
+- salva rascunhos e permite retomá-los;
+- mantém cada rascunho também como arquivo JSON simples em uma pasta do Drive;
+- registra enviados, aceitos para execução, pagamento e data;
+- exige confirmação de envio por `contato@cordel2pontozero.com`;
+- gera PDF e, ao salvar como enviado, guarda uma cópia na pasta do Drive;
+- mantém a assinatura da equipe fixa no documento;
+- usa a fonte Cordelina nos títulos como elemento da identidade visual;
+- protege os dados do backend com senha validada no Apps Script.
+- troca a senha por uma sessão temporária após o login, sem armazená-la no navegador;
+- reserva uma camada desativada para futuras integrações fiscais e bancárias.
+
+## Estrutura real
+
+```text
+Recurso-Web/
+├── index.html          Interface do gerador
+├── style.css           Visual responsivo e temas do orçamento
+├── app.js              Formulário, cálculos, PDF e integração
+├── config.js           URL pública do Web App
+├── integrations.js     Contrato público, sem segredos, para integrações futuras
+├── Code.gs             Backend local do Google Apps Script (ignorado pelo Git)
+├── README.md
+├── docs/
+│   └── SETUP.md        Publicação passo a passo
+└── assets/
+    ├── assinatura-equipe.jpg
+    ├── LOGOMARCA-CORDEL 2.0 Inova Simples.png
+    ├── Capa-LinkedIn.png
+    ├── Template.docx
+    ├── Fontes/
+    └── vendor/
+        └── html2pdf.bundle.min.js
+```
+
+## Antes de publicar
+
+1. Siga [docs/SETUP.md](docs/SETUP.md).
+2. Implante o `Code.gs` como Web App.
+3. Cole a URL terminada em `/exec` no arquivo `config.js`.
+4. Teste o fluxo completo antes de ativar o GitHub Pages.
+
+> A senha não deve ser escrita em `app.js`, `config.js`, `README.md` ou em qualquer arquivo público. Ela fica em uma Propriedade do script no Google Apps Script.
+
+## Licença
+
+Este é um software proprietário, com todos os direitos reservados à Cordel 2.0
+Inova Simples (I.S.). O uso por terceiros depende de autorização comercial
+escrita e pagamento acordado. Consulte [LICENSE.md](LICENSE.md) e
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+O `Code.gs` está no `.gitignore` e deve ser mantido diretamente no projeto
+privado do Google Apps Script.
+
+O endereço do Web App pode ser descoberto, mas listar ou alterar dados exige
+uma sessão temporária válida. O frontend nunca contém a senha nem credenciais
+de integrações.
+
+## Tecnologias
+
+- HTML, CSS e JavaScript sem framework;
+- html2pdf.js 0.10.1, incluído localmente para geração do PDF;
+- Google Apps Script para a API;
+- Google Sheets para registros;
+- Google Drive para os PDFs;
+- arquivos JSON no Google Drive para cópia e retomada dos rascunhos;
+- GitHub Pages para hospedagem do frontend.
+
+## Estado do projeto
+
+O frontend funciona em **modo local** enquanto a URL do Apps Script não está configurada. Nesse modo, os registros ficam apenas no armazenamento do navegador e servem para revisão visual. Após configurar `config.js`, a entrada passa a validar a senha no backend e os registros são enviados ao Google.
+
+Configurações feitas no modo local ficam somente naquele navegador. No modo
+online, ISS e CNAEs são guardados nas Propriedades do script e compartilhados
+pela equipe.

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Gerador de orçamentos comerciais da Cordel 2.0 Inova Simples.">
+  <meta name="theme-color" content="#11120f">
+  <title>Orçamentos | Cordel 2.0</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="assets/vendor/html2pdf.bundle.min.js"></script>
+  <script defer src="config.js"></script>
+  <script defer src="integrations.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <img
+        class="login-logo"
+        src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+        alt="Cordel 2.0"
+      >
+      <p class="eyebrow">Bem-vinda, equipe</p>
+      <h1>Cordel 2.0 Inova Simples (I.S.)</h1>
+      <p class="login-copy">Entre para acessar o gerador e acompanhar os orçamentos.</p>
+
+      <form id="loginForm" class="login-form">
+        <label for="senhaInput">Senha de acesso</label>
+        <div class="password-row">
+          <input
+            id="senhaInput"
+            name="senha"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Digite sua senha"
+            required
+          >
+          <button class="button button-primary" id="loginButton" type="submit">Entrar</button>
+        </div>
+        <p class="form-message" id="loginMessage" role="status"></p>
+      </form>
+
+      <button class="text-button" id="localModeButton" type="button" hidden>
+        Continuar em modo local
+      </button>
+    </div>
+  </div>
+
+  <div class="app-shell" id="appShell" hidden>
+    <header class="topbar">
+      <a class="brand" href="#gerador" data-view="gerador" aria-label="Novo orçamento">
+        <img
+          src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+          alt=""
+        >
+        <span>
+          <strong>Cordel 2.0</strong>
+          <small>Orçamentos</small>
+        </span>
+      </a>
+
+      <nav class="main-nav" aria-label="Seções do sistema">
+        <button class="nav-button is-active" type="button" data-view="gerador">Novo</button>
+        <button class="nav-button" type="button" data-view="rascunhos">Rascunhos</button>
+        <button class="nav-button" type="button" data-view="enviados">Enviados</button>
+        <button class="nav-button" type="button" data-view="aceitos">Aceitos / execução</button>
+      </nav>
+
+      <div class="topbar-actions">
+        <span class="mode-badge" id="modeBadge" hidden>Modo local</span>
+        <button
+          class="settings-button"
+          id="settingsButton"
+          type="button"
+          aria-label="Configurações"
+          title="Configurações"
+        >
+          <span aria-hidden="true">⚙</span>
+        </button>
+        <a class="button button-ghost button-small" id="officialSiteLink" href="#" target="_blank" rel="noopener">
+          Site
+        </a>
+        <button class="button button-ghost button-small" id="logoutButton" type="button">Sair</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="generator-view" id="view-gerador">
+        <aside class="editor-panel">
+          <div class="editor-heading">
+            <div>
+              <p class="eyebrow">Proposta comercial</p>
+              <h2 id="editorTitle">Novo orçamento</h2>
+            </div>
+            <button class="text-button" id="newQuoteButton" type="button">Limpar</button>
+          </div>
+
+          <form id="quoteForm" novalidate>
+            <section class="form-section">
+              <div class="section-heading">
+                <span class="section-number">01</span>
+                <div>
+                  <h3>Cliente e serviço</h3>
+                  <p>As informações que identificam a proposta.</p>
+                </div>
+              </div>
+
+              <div class="field-grid field-grid-2">
+                <div class="field">
+                  <label for="autorOrcamento">Responsável</label>
+                  <select id="autorOrcamento" name="autor" required>
+                    <option value="Celeste M. Farias">Celeste M. Farias</option>
+                    <option value="Carlos J. V. Guerrero">Carlos J. V. Guerrero</option>
+                    <option value="Jansen Gabriel Farias">Jansen Gabriel Farias</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="dataEmissao">Data de emissão</label>
+                  <input id="dataEmissao" name="dataEmissao" type="date" required>
+                </div>
+              </div>
+
+              <div class="field">
+                <label for="solicitadoPor">Cliente / solicitado por</label>
+                <input
+                  id="solicitadoPor"
+                  name="solicitadoPor"
+                  type="text"
+                  placeholder="Instituição ou pessoa responsável"
+                  maxlength="160"
+                  required
+                >
+              </div>
+
+              <div class="field">
+                <label for="cnae">Atividade / CNAE</label>
+                <select id="cnae" name="cnae" required></select>
+              </div>
+
+              <div class="field-grid field-grid-2" id="customCnaeFields" hidden>
+                <div class="field">
+                  <label for="customCnaeCode">Código do CNAE</label>
+                  <input id="customCnaeCode" name="customCnaeCode" type="text" placeholder="00.00-0-00">
+                </div>
+                <div class="field">
+                  <label for="customCnaeDescription">Descrição da atividade</label>
+                  <input id="customCnaeDescription" name="customCnaeDescription" type="text" placeholder="Nome da atividade">
+                </div>
+              </div>
+
+              <div class="field" id="descriptionSuggestionField" hidden>
+                <label for="descriptionSuggestion">Reutilizar uma descrição deste CNAE</label>
+                <select id="descriptionSuggestion">
+                  <option value="">Escolha uma descrição anterior…</option>
+                </select>
+                <small class="field-help">As descrições ficam organizadas pelo CNAE no histórico da planilha.</small>
+              </div>
+
+              <div class="field">
+                <label for="tituloServico">Título do serviço</label>
+                <input
+                  id="tituloServico"
+                  name="tituloServico"
+                  type="text"
+                  value="Minicurso de escrita criativa, literatura popular e IA generativa"
+                  maxlength="180"
+                  required
+                >
+              </div>
+
+              <div class="field">
+                <label for="descricaoServico">Descrição</label>
+                <textarea
+                  id="descricaoServico"
+                  name="descricaoServico"
+                  rows="5"
+                  placeholder="Descreva a entrega, duração, público e equipe envolvida."
+                  maxlength="2500"
+                  required
+                ></textarea>
+                <small class="field-help">Seja breve: dois ou três parágrafos costumam ser suficientes.</small>
+              </div>
+            </section>
+
+            <section class="form-section">
+              <div class="section-heading">
+                <span class="section-number">02</span>
+                <div>
+                  <h3>Valores</h3>
+                  <p>Adicione apenas os itens necessários.</p>
+                </div>
+              </div>
+
+              <div class="items-editor" id="itemsEditor"></div>
+              <button class="add-item-button" id="addItemButton" type="button">
+                <span aria-hidden="true">＋</span> Adicionar item
+              </button>
+
+              <div class="tax-row">
+                <label for="taxaISS">ISS incluído no total</label>
+                <div class="percent-input">
+                  <input id="taxaISS" name="taxaISS" type="number" value="5" min="0" max="100" step="0.1">
+                  <span>%</span>
+                </div>
+              </div>
+
+              <div class="finance-notice">
+                <strong>Orientação ao financeiro</strong>
+                <span>O valor final do orçamento deve incluir os 5% de ISS da nota fiscal.</span>
+              </div>
+
+              <div class="totals-card" aria-live="polite">
+                <div><span>Subtotal</span><strong id="editorSubtotal">R$ 0,00</strong></div>
+                <div><span>ISS</span><strong id="editorIss">R$ 0,00</strong></div>
+                <div class="total-line"><span>Total</span><strong id="editorTotal">R$ 0,00</strong></div>
+              </div>
+            </section>
+
+            <details class="form-details">
+              <summary>
+                <span>
+                  <strong>Condições comerciais</strong>
+                  <small>Data, local, pagamento e observações</small>
+                </span>
+                <span class="summary-icon" aria-hidden="true">＋</span>
+              </summary>
+              <div class="details-content">
+                <div class="field-grid field-grid-2">
+                  <div class="field">
+                    <label for="dataRealizacao">Realização prevista</label>
+                    <input id="dataRealizacao" name="dataRealizacao" type="text" placeholder="Ex.: 31/07/2026, das 8h30 às 12h30">
+                  </div>
+                  <div class="field">
+                    <label for="validadeDias">Validade</label>
+                    <div class="suffix-input">
+                      <input id="validadeDias" name="validadeDias" type="number" value="20" min="1" max="365">
+                      <span>dias</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="field">
+                  <label for="localRealizacao">Local</label>
+                  <input id="localRealizacao" name="localRealizacao" type="text" placeholder="Endereço ou formato on-line">
+                </div>
+
+                <div class="field">
+                  <label for="condicaoPagamento">Pagamento</label>
+                  <input
+                    id="condicaoPagamento"
+                    name="condicaoPagamento"
+                    type="text"
+                    value="Via Pix (chave CNPJ), mediante emissão de nota fiscal."
+                  >
+                </div>
+
+                <div class="field">
+                  <label for="naoInclusos">Não inclusos / responsabilidades do cliente</label>
+                  <textarea
+                    id="naoInclusos"
+                    name="naoInclusos"
+                    rows="3"
+                    placeholder="Ex.: espaço, projetor, sistema de som ou coffee break."
+                  ></textarea>
+                </div>
+              </div>
+            </details>
+
+            <label class="email-confirmation">
+              <input id="enviadoEmail" name="enviadoEmail" type="checkbox">
+              <span>
+                <strong>Envio registrado</strong>
+                <small>O orçamento foi enviado pelo e-mail contato@cordel2pontozero.com.</small>
+              </span>
+            </label>
+
+            <div class="form-actions">
+              <button class="button button-secondary" id="saveDraftButton" type="button">
+                Salvar rascunho
+              </button>
+              <button class="button button-primary" id="saveSentButton" type="button">
+                Salvar como enviado
+              </button>
+            </div>
+            <p class="form-message" id="statusMessage" role="status"></p>
+          </form>
+        </aside>
+
+        <section class="preview-panel" aria-label="Prévia do orçamento">
+          <div class="preview-toolbar">
+            <div>
+              <span class="preview-dot" aria-hidden="true"></span>
+              <strong>Prévia em tempo real</strong>
+            </div>
+            <div class="preview-actions">
+              <label class="theme-control" for="visualTheme">
+                Visual
+                <select id="visualTheme">
+                  <option value="print">Impressão</option>
+                  <option value="digital">Digital</option>
+                </select>
+              </label>
+              <button class="button button-dark button-small" id="downloadPdfButton" type="button">
+                Baixar PDF
+              </button>
+            </div>
+          </div>
+
+          <div class="paper-stage">
+            <article class="quote-document" id="quoteDocument">
+              <header class="document-header">
+                <img
+                  class="document-logo"
+                  src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+                  alt="Cordel 2.0"
+                >
+                <div class="document-title">
+                  <p>Proposta</p>
+                  <h1>Orçamento comercial</h1>
+                  <div class="document-meta">
+                    <span>Fólio <strong id="docFolio">Prévia</strong></span>
+                    <span>Emissão <strong id="docData"></strong></span>
+                  </div>
+                </div>
+              </header>
+
+              <div class="document-accent"></div>
+
+              <section class="document-section">
+                <p class="document-kicker">Dados da proposta</p>
+                <div class="company-grid">
+                  <div><span>Empresa</span><strong>Cordel 2.0 Inova Simples (I.S.)</strong></div>
+                  <div><span>CNPJ</span><strong>66.466.887/0001-16</strong></div>
+                  <div class="company-grid-wide"><span>Atividade / CNAE</span><strong id="docCnae">—</strong></div>
+                  <div><span>Solicitado por</span><strong id="docSolicitado">—</strong></div>
+                  <div><span>Responsável</span><strong id="docAutor">—</strong></div>
+                </div>
+              </section>
+
+              <section class="document-section">
+                <p class="document-kicker">Serviço</p>
+                <h2 id="docTituloServico">Título do serviço</h2>
+                <div class="document-description" id="docDescricao">Descreva o serviço para visualizar a proposta.</div>
+              </section>
+
+              <section class="document-section">
+                <p class="document-kicker">Investimento</p>
+                <div class="table-wrap">
+                  <table class="document-table">
+                    <thead>
+                      <tr>
+                        <th>Item</th>
+                        <th>Detalhamento</th>
+                        <th>Valor</th>
+                      </tr>
+                    </thead>
+                    <tbody id="docItems"></tbody>
+                    <tfoot>
+                      <tr>
+                        <td colspan="2">Subtotal</td>
+                        <td id="docSubtotal">R$ 0,00</td>
+                      </tr>
+                      <tr>
+                        <td colspan="2">Impostos municipais (ISS — <span id="docIssRate">5%</span>)</td>
+                        <td id="docIss">R$ 0,00</td>
+                      </tr>
+                      <tr class="document-total-row">
+                        <td colspan="2">Valor total do orçamento</td>
+                        <td id="docTotal">R$ 0,00</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </section>
+
+              <section class="document-section document-conditions" id="docConditionsSection">
+                <p class="document-kicker">Condições comerciais</p>
+                <div class="conditions-grid" id="docConditions"></div>
+                <p class="not-included" id="docNaoInclusos" hidden></p>
+              </section>
+
+              <div class="document-signature">
+                <img src="assets/assinatura-equipe.jpg" alt="Equipe Cordel 2.0">
+              </div>
+
+              <footer class="document-footer">
+                <span>Cordel 2.0 Inova Simples (I.S.)</span>
+                <span>contato@cordel2pontozero.com</span>
+              </footer>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="records-view" id="view-records" hidden>
+        <div class="records-header">
+          <div>
+            <p class="eyebrow">Acompanhamento</p>
+            <h2 id="recordsTitle">Rascunhos</h2>
+          </div>
+          <button class="button button-primary" type="button" data-view="gerador">Novo orçamento</button>
+        </div>
+        <div class="records-feedback" id="recordsFeedback">Carregando...</div>
+        <div class="records-list" id="recordsList"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle">
+    <form class="settings-card" id="settingsForm" method="dialog">
+      <header class="settings-header">
+        <div>
+          <p class="eyebrow">Preferências do gerador</p>
+          <h2 id="settingsTitle">Configurações</h2>
+        </div>
+        <button class="dialog-close" id="closeSettingsButton" type="button" aria-label="Fechar configurações">×</button>
+      </header>
+
+      <section class="settings-section">
+        <div>
+          <h3>ISS padrão</h3>
+          <p>Será usado em novos orçamentos. Orçamentos antigos mantêm a taxa registrada.</p>
+        </div>
+        <div class="percent-input settings-tax">
+          <input id="settingsIss" type="number" min="0" max="100" step="0.1" aria-label="ISS padrão">
+          <span>%</span>
+        </div>
+      </section>
+
+      <section class="settings-section settings-section-stack">
+        <div>
+          <h3>Atividades / CNAEs</h3>
+          <p>Remova atividades que não usa ou acrescente outras à lista do gerador.</p>
+        </div>
+        <div class="settings-cnae-list" id="settingsCnaeList"></div>
+        <button class="add-item-button" id="addCnaeButton" type="button">
+          <span aria-hidden="true">＋</span> Acrescentar CNAE
+        </button>
+      </section>
+
+      <footer class="settings-footer">
+        <p class="form-message" id="settingsMessage" role="status"></p>
+        <div>
+          <button class="button button-secondary" id="cancelSettingsButton" type="button">Cancelar</button>
+          <button class="button button-primary" id="saveSettingsButton" type="submit">Salvar</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+</body>
+</html>
