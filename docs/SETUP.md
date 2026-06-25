@@ -114,11 +114,11 @@ Faça este percurso:
 5. abrir a aba Rascunhos e retomar;
 6. informar o e-mail do cliente e marcar a confirmação de envio;
 7. finalizar como enviado, baixar o PDF e confirmar que abre corretamente;
-8. anotar o `pdfFileId` exibido por `diagnosticarIntegridadePdf`;
+8. executar `diagnosticarUltimoPdf` e anotar o `pdfFileId` exibido;
 9. abrir a aba Enviados e usar **Enviar para execução**;
 10. confirmar que o cartão aparece em Aceitos / execução como **Em execução**;
 11. conferir que o mesmo arquivo foi movido para a pasta de execução e executar
-    novamente `diagnosticarIntegridadePdf`; `mesmoIdDuranteFluxo` deve ser `true`;
+    novamente `diagnosticarUltimoPdf`; `mesmoIdDuranteFluxo` deve ser `true`;
 12. confirmar que as duas notificações internas chegaram sem anexo;
 13. informar pagamento, data e andamento em Aceitos / execução;
 14. cancelar digitando exatamente o fólio, conferir a aba Lixeira e restaurar;

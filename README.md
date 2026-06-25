@@ -72,8 +72,9 @@ Recurso-Web/
 
 O teste de aceitação deve confirmar que o `pdfFileId` retornado em Enviados é
 exatamente o mesmo depois da passagem para Aceitos / execução. As funções
-`diagnosticarConcorrenciaEIdempotencia` e `diagnosticarIntegridadePdf` ajudam
-a conferir o resultado diretamente no Apps Script.
+`diagnosticarConcorrenciaEIdempotencia`, `diagnosticarUltimoPdf` e
+`diagnosticarIntegridadePdf` ajudam a conferir o resultado diretamente no
+Apps Script.
 
 > A senha não deve ser escrita em `app.js`, `config.js`, `README.md` ou em qualquer arquivo público. Ela fica em uma Propriedade do script no Google Apps Script.
 
