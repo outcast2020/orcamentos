@@ -101,6 +101,7 @@ const LOCAL_RECORDS_KEY = 'cordelOrcamentosLocaisV2';
 const LOCAL_SETTINGS_KEY = 'cordelConfiguracoesV1';
 const SESSION_KEY = 'cordelSessionToken';
 const RECORDS_CACHE_KEY = 'cordelRecordsCacheV1';
+const PDF_LAYOUT_VERSION = '2026-06-footer-v2';
 
 const state = {
   accessToken: '',
@@ -108,6 +109,9 @@ const state = {
   folio: '',
   draftFileId: '',
   draftUrl: '',
+  pdfFileId: '',
+  pdfUrl: '',
+  pdfFingerprint: '',
   saving: false,
   saveOperationId: '',
   records: [],
@@ -675,6 +679,9 @@ function collectQuoteData(status) {
     folio: state.folio,
     draftFileId: state.draftFileId,
     urlRascunho: state.draftUrl,
+    pdfFileId: state.pdfFileId,
+    urlPdf: state.pdfUrl,
+    pdfFingerprint: state.pdfFingerprint,
     operationId: state.saveOperationId,
     status,
     temaVisual: 'print',
@@ -826,9 +833,9 @@ function isBackendConfigured() {
   return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec(?:\?.*)?$/.test(GAS_URL);
 }
 
-async function saveQuote(status) {
-  if (state.saving) return;
-  if (!validateQuote(status)) return;
+async function saveQuote(status, options = {}) {
+  if (state.saving) return null;
+  if (!validateQuote(status)) return null;
 
   const button = status === 'Rascunho' ? elements.saveDraftButton : elements.saveSentButton;
   state.saving = true;
@@ -837,10 +844,32 @@ async function saveQuote(status) {
   setMessage(elements.statusMessage, 'Preparando o orçamento...', '');
 
   try {
-    const data = collectQuoteData(status);
+    let data = collectQuoteData(status);
 
-    if (status === 'Enviado' && !state.localMode) {
+    if (!state.localMode && !state.folio) {
+      const reservationData = {
+        ...data,
+        status: 'Rascunho',
+        pdfBase64: ''
+      };
+      const reservation = await callApi('salvar', { dados: reservationData });
+      applySaveResult(reservation, reservationData);
+      state.saveOperationId = createOperationId();
+      data = collectQuoteData(status);
+    }
+
+    const fingerprint = createPdfFingerprint(data);
+    const storedPdfIsCurrent =
+      Boolean(state.pdfUrl) &&
+      state.pdfFingerprint === fingerprint;
+
+    data.pdfFingerprint = fingerprint;
+    if (!state.localMode && !storedPdfIsCurrent) {
+      setMessage(elements.statusMessage, 'Gerando o PDF definitivo...', '');
       const pdfBlob = await createPdfBlob();
+      if (!pdfBlob || pdfBlob.size < 1000) {
+        throw new Error('O PDF gerado ficou vazio.');
+      }
       data.pdfBase64 = await blobToBase64(pdfBlob);
     }
 
@@ -848,12 +877,8 @@ async function saveQuote(status) {
       ? saveLocalQuote(data)
       : await callApi('salvar', { dados: data });
 
-    state.folio = result.folio;
-    state.draftFileId = result.draftFileId || state.draftFileId;
-    state.draftUrl = result.urlRascunho || state.draftUrl;
+    applySaveResult(result, data);
     state.saveOperationId = '';
-    elements.docFolio.textContent = state.folio;
-    elements.editorTitle.textContent = `Orçamento ${state.folio}`;
     setMessage(
       elements.statusMessage,
       status === 'Rascunho'
@@ -862,28 +887,86 @@ async function saveQuote(status) {
       'success'
     );
     await refreshRecordsCache(true);
-    await runPostSaveIntegrations({
-      folio: state.folio,
-      status,
-      valorTotal: data.valorTotal
-    });
+    if (!options.skipIntegrations) {
+      await runPostSaveIntegrations({
+        folio: state.folio,
+        status,
+        valorTotal: data.valorTotal
+      });
+    }
+    return result;
   } catch (error) {
     setMessage(elements.statusMessage, friendlyError(error, 'Não foi possível salvar o orçamento.'), 'error');
+    return null;
   } finally {
     state.saving = false;
     setQuoteSaving(false);
   }
 }
 
+function applySaveResult(result, data = {}) {
+  state.folio = result.folio || data.folio || state.folio;
+  state.draftFileId =
+    result.draftFileId || data.draftFileId || state.draftFileId;
+  state.draftUrl =
+    result.urlRascunho || data.urlRascunho || state.draftUrl;
+  state.pdfFileId =
+    result.pdfFileId || data.pdfFileId || state.pdfFileId;
+  state.pdfUrl =
+    result.urlPdf || data.urlPdf || state.pdfUrl;
+  state.pdfFingerprint =
+    result.pdfFingerprint ||
+    data.pdfFingerprint ||
+    state.pdfFingerprint;
+  elements.docFolio.textContent = state.folio || 'Prévia';
+  elements.editorTitle.textContent = state.folio
+    ? `Orçamento ${state.folio}`
+    : 'Novo orçamento';
+  updatePreview();
+}
+
 async function downloadPdf() {
   if (!validateQuote('Rascunho')) return;
-  setBusy(elements.downloadPdfButton, true, 'Gerando...');
-  setMessage(elements.statusMessage, 'Gerando o PDF...', '');
+  setBusy(elements.downloadPdfButton, true, 'Preparando...');
+  setMessage(elements.statusMessage, 'Preparando o PDF...', '');
 
   try {
     if (typeof window.html2pdf !== 'function') {
       throw new Error('O gerador de PDF não foi carregado. Verifique sua conexão.');
     }
+
+    if (!state.localMode) {
+      const popup = window.open('about:blank', '_blank');
+      const currentFingerprint = createPdfFingerprint(
+        collectQuoteData('Rascunho')
+      );
+
+      if (
+        !state.pdfUrl ||
+        state.pdfFingerprint !== currentFingerprint
+      ) {
+        const result = await saveQuote('Rascunho', {
+          skipIntegrations: true
+        });
+        if (!result || !state.pdfUrl) {
+          popup?.close();
+          throw new Error('Não foi possível armazenar o PDF antes de abri-lo.');
+        }
+      }
+
+      if (popup) {
+        popup.location.href = state.pdfUrl;
+      } else {
+        window.open(state.pdfUrl, '_blank', 'noopener');
+      }
+      setMessage(
+        elements.statusMessage,
+        `PDF armazenado do orçamento ${state.folio} aberto com sucesso.`,
+        'success'
+      );
+      return;
+    }
+
     const blob = await createPdfBlob();
     if (!blob || blob.size < 1000) {
       throw new Error('O PDF gerado ficou vazio. Tente novamente.');
@@ -895,6 +978,36 @@ async function downloadPdf() {
   } finally {
     setBusy(elements.downloadPdfButton, false, 'Baixar PDF');
   }
+}
+
+function createPdfFingerprint(data) {
+  const printable = {
+    layout: PDF_LAYOUT_VERSION,
+    folio: data.folio || state.folio || '',
+    dataEmissao: data.dataEmissao || '',
+    autor: data.autor || '',
+    cnae: data.cnae || '',
+    solicitadoPor: data.solicitadoPor || '',
+    tituloServico: data.tituloServico || '',
+    descricaoServico: data.descricaoServico || '',
+    itens: Array.isArray(data.itens) ? data.itens : [],
+    subtotal: Number(data.subtotal) || 0,
+    taxaISS: Number(data.taxaISS) || 0,
+    valorISS: Number(data.valorISS) || 0,
+    valorTotal: Number(data.valorTotal) || 0,
+    dataRealizacao: data.dataRealizacao || '',
+    localRealizacao: data.localRealizacao || '',
+    condicaoPagamento: data.condicaoPagamento || '',
+    validadeDias: Number(data.validadeDias) || 20,
+    naoInclusos: data.naoInclusos || ''
+  };
+  const source = JSON.stringify(printable);
+  let hash = 2166136261;
+  for (let index = 0; index < source.length; index += 1) {
+    hash ^= source.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `${PDF_LAYOUT_VERSION}-${(hash >>> 0).toString(16)}`;
 }
 
 async function downloadImage() {
@@ -976,7 +1089,7 @@ function pdfOptions() {
     },
     pagebreak: {
       mode: ['css', 'legacy'],
-      avoid: ['tr', '.document-header', '.document-signature']
+      avoid: ['tr', '.document-header', '.document-closing']
     }
   };
 }
@@ -1516,6 +1629,9 @@ function loadQuote(record) {
   state.folio = data.folio || record.Folio || '';
   state.draftFileId = data.draftFileId || '';
   state.draftUrl = data.urlRascunho || record['URL Rascunho'] || '';
+  state.pdfFileId = data.pdfFileId || '';
+  state.pdfUrl = data.urlPdf || record['URL PDF'] || '';
+  state.pdfFingerprint = data.pdfFingerprint || '';
   state.items = normalizeItems(data.itens, data);
 
   elements.autorOrcamento.value = data.autor || elements.autorOrcamento.options[0].value;
@@ -1578,6 +1694,9 @@ function resetQuote(confirmReset) {
   state.folio = '';
   state.draftFileId = '';
   state.draftUrl = '';
+  state.pdfFileId = '';
+  state.pdfUrl = '';
+  state.pdfFingerprint = '';
   state.saveOperationId = '';
   state.items = [newItem()];
   elements.quoteForm.reset();
@@ -1647,7 +1766,7 @@ function saveLocalQuote(data) {
     'Enviado Email?': data.enviadoEmail ? 'Sim' : 'Não',
     'Pago?': data.pago ? 'Sim' : 'Não',
     'Data Pagamento': data.dataPagamento || '',
-    'URL PDF': '',
+    'URL PDF': data.urlPdf || '',
     'URL Rascunho': data.urlRascunho || '',
     'Follow-up em': data.followUpDate || '',
     'Retorno Cliente?': data.retornoCliente ? 'Sim' : 'Não',

@@ -22,9 +22,13 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 - registra enviados, aceitos para execução, pagamento e data;
 - exige confirmação de envio por `contato@cordel2pontozero.com`;
 - gera PDF e imagem PNG;
+- gera o PDF definitivo somente depois de reservar o fólio;
+- mantém um único arquivo PDF e o move de rascunhos para enviados e execução;
+- mantém a imagem da equipe proporcional e somente no fechamento da página final;
 - mantém o envio de e-mail ao cliente temporariamente indisponível;
 - alerta a equipe após 5 dias úteis sem retorno do cliente;
 - coloca os aceitos numa fila, cria o pacote na pasta de execução e notifica coordenação e produção;
+- normaliza fólios antigos como `10` para `00010` e repara estados anteriores de execução;
 - sinaliza visualmente quando a execução está na fila, em processamento, pronta ou com pendência;
 - evita gravações duplicadas com bloqueio no frontend e idempotência no backend;
 - reduz recarregamentos com cache no navegador e no Apps Script;

@@ -920,12 +920,15 @@ textarea[aria-invalid="true"] {
   margin-top: 5mm;
 }
 
-.export-rendering .document-signature {
+.export-rendering .document-closing {
   margin-top: 4mm;
 }
 
 .export-rendering .document-signature img {
-  max-height: 32mm;
+  width: auto;
+  max-width: 110mm;
+  height: auto;
+  max-height: none;
 }
 
 .export-rendering .document-footer {
@@ -1157,16 +1160,24 @@ textarea[aria-invalid="true"] {
   color: #33342e;
 }
 
-.document-signature {
+.document-closing {
   margin-top: 7mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.document-signature {
+  margin: 0;
   text-align: center;
   break-inside: avoid;
 }
 
 .document-signature img {
-  width: 100%;
-  max-height: 48mm;
-  object-fit: contain;
+  display: block;
+  width: auto;
+  max-width: 128mm;
+  height: auto;
+  margin: 0 auto;
 }
 
 .document-footer {

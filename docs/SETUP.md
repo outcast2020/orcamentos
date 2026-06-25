@@ -62,6 +62,9 @@ O registro de execução deve indicar:
 - gatilho de execução ativo;
 - próximo fólio disponível.
 
+O `setupPlanilha` também normaliza fólios antigos que tenham perdido os zeros
+à esquerda e repara registros que já possuam arquivo na pasta de execução.
+
 ## 4. Implantar como Web App
 
 1. Clique em **Implantar > Nova implantação**.
@@ -103,15 +106,16 @@ Faça este percurso:
 2. criar um orçamento com dois itens;
 3. baixar o PDF e a imagem e conferir se ambos estão completos;
 4. salvar como rascunho e tentar clicar novamente durante a gravação;
-5. conferir o arquivo `Rascunho_00010_Cliente.json` na pasta de rascunhos;
+5. conferir o JSON e o PDF do fólio na pasta de rascunhos;
 6. abrir a aba Rascunhos e retomar;
 7. informar o e-mail do cliente e marcar a confirmação de envio;
-8. salvar como enviado e conferir o PDF na pasta do Drive;
+8. salvar como enviado e confirmar que o mesmo PDF foi movido para a pasta de
+   enviados, mantendo a mesma URL e o mesmo ID;
 9. abrir a aba Enviados e usar **Enviar para execução**;
 10. confirmar que o cartão muda imediatamente para **Execução na fila**;
 11. aguardar até um minuto e confirmar a mudança para **Em execução**;
-12. conferir o arquivo na pasta de execução e as notificações enviadas para
-    coordenação e produção;
+12. conferir que o mesmo arquivo foi movido para a pasta de execução e que as
+    notificações foram enviadas para coordenação e produção;
 13. informar pagamento e data em Aceitos / execução;
 14. conferir a linha correspondente na planilha;
 15. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
@@ -124,6 +128,11 @@ move arquivos repetidos com o mesmo nome para a lixeira.
 Se a planilha tiver muitas linhas ou colunas vazias, execute uma vez
 `otimizarGradePlanilha`. A função preserva todos os dados e mantém uma pequena
 reserva de linhas, removendo apenas o excesso vazio da grade física.
+
+Após instalar esta versão sobre uma implantação anterior, execute também
+`repararStatusExecucaoAnteriores`. A função transforma fólios numéricos como
+`10` em `00010` e marca como aceitos os registros que já tenham arquivo na
+pasta de execução.
 
 ## 7. Publicar no GitHub Pages
 
@@ -141,6 +150,8 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 - Não publique a senha em commits, capturas de tela ou documentação.
 - Ao mudar o percentual de ISS no formulário, o valor fica registrado em cada orçamento.
 - Ao salvar novamente, a cópia anterior do PDF é substituída para evitar duplicados.
+- O PDF é criado inicialmente na pasta de rascunhos e depois movido entre as
+  etapas sem mudar de ID ou URL.
 - O arquivo JSON do rascunho é atualizado no mesmo arquivo sempre que houver novo salvamento.
 - O fólio é protegido por bloqueio e cada gravação tem um identificador idempotente.
 - Leituras e atualizações coletivas usam arrays e uma única operação de
