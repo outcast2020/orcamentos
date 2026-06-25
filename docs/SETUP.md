@@ -6,7 +6,7 @@
 2. Substitua o conteúdo do editor pelo arquivo `Code.gs` deste projeto.
 3. Salve o projeto.
 4. Execute manualmente a função `setupPlanilha`.
-5. Autorize o acesso solicitado à Planilha, Drive, Gmail e gatilhos.
+5. Autorize o acesso solicitado à Planilha, Drive, envio de notificações e gatilhos.
 
 O setup usa inicialmente:
 
@@ -59,6 +59,7 @@ O registro de execução deve indicar:
 - pasta de execução configurada;
 - senha configurada;
 - aba encontrada;
+- gatilho de execução ativo;
 - próximo fólio disponível.
 
 ## 4. Implantar como Web App
@@ -78,9 +79,9 @@ sessão. Conhecer a URL `/exec` não concede acesso aos registros.
 Sempre que alterar `Code.gs`, edite a implantação existente e selecione uma
 **nova versão**. A URL `/exec` pode continuar a mesma.
 
-Para que os rascunhos sejam criados na caixa
-`contato@cordel2pontozero.com`, implante o Web App por essa conta ou configure
-esse endereço como alias autorizado da conta que executa o Apps Script.
+O envio direto de orçamento ao cliente está temporariamente indisponível. O
+Apps Script usa e-mail somente para os alertas internos de acompanhamento e
+para notificar coordenação e produção quando um orçamento entra em execução.
 
 ## 5. Conectar o frontend
 
@@ -106,17 +107,23 @@ Faça este percurso:
 6. abrir a aba Rascunhos e retomar;
 7. informar o e-mail do cliente e marcar a confirmação de envio;
 8. salvar como enviado e conferir o PDF na pasta do Drive;
-9. usar **Abrir no Gmail** e conferir mensagem, destinatário e anexo;
-10. abrir a aba Enviados e marcar como aceito;
-11. conferir o arquivo na pasta de execução e as notificações enviadas;
-12. informar pagamento e data em Aceitos / execução;
-13. conferir a linha correspondente na planilha;
-14. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
+9. abrir a aba Enviados e usar **Enviar para execução**;
+10. confirmar que o cartão muda imediatamente para **Execução na fila**;
+11. aguardar até um minuto e confirmar a mudança para **Em execução**;
+12. conferir o arquivo na pasta de execução e as notificações enviadas para
+    coordenação e produção;
+13. informar pagamento e data em Aceitos / execução;
+14. conferir a linha correspondente na planilha;
+15. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
     remoção de um CNAE.
 
 Depois da primeira atualização, execute uma vez a função `limparDuplicados`
 no editor do Apps Script. Ela mantém o registro mais recente de cada fólio e
 move arquivos repetidos com o mesmo nome para a lixeira.
+
+Se a planilha tiver muitas linhas ou colunas vazias, execute uma vez
+`otimizarGradePlanilha`. A função preserva todos os dados e mantém uma pequena
+reserva de linhas, removendo apenas o excesso vazio da grade física.
 
 ## 7. Publicar no GitHub Pages
 
@@ -136,7 +143,17 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 - Ao salvar novamente, a cópia anterior do PDF é substituída para evitar duplicados.
 - O arquivo JSON do rascunho é atualizado no mesmo arquivo sempre que houver novo salvamento.
 - O fólio é protegido por bloqueio e cada gravação tem um identificador idempotente.
+- Leituras e atualizações coletivas usam arrays e uma única operação de
+  planilha sempre que possível.
+- A listagem usa cache de 5 minutos no Apps Script, invalidado imediatamente
+  após qualquer gravação.
+- O navegador mostra o último histórico da sessão enquanto revalida os dados
+  em segundo plano.
 - O `setupPlanilha` cria um gatilho diário para verificar follow-ups vencidos.
+- O `setupPlanilha` cria também um gatilho a cada minuto para processar a fila
+  de aceitos sem travar o clique do usuário.
+- Se uma execução falhar três vezes, corrija a configuração e execute
+  `reenfileirarExecucoesComErro` uma vez no editor.
 - `Code.gs` está no `.gitignore`; atualize-o diretamente no Google Apps Script.
 - Integrações futuras permanecem invisíveis na interface e desativadas no
   backend até configuração e implementação expressas.

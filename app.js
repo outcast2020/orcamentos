@@ -100,6 +100,7 @@ const OUTRO_CNAE = '__OUTRO__';
 const LOCAL_RECORDS_KEY = 'cordelOrcamentosLocaisV2';
 const LOCAL_SETTINGS_KEY = 'cordelConfiguracoesV1';
 const SESSION_KEY = 'cordelSessionToken';
+const RECORDS_CACHE_KEY = 'cordelRecordsCacheV1';
 
 const state = {
   accessToken: '',
@@ -110,6 +111,8 @@ const state = {
   saving: false,
   saveOperationId: '',
   records: [],
+  recordsLoadedAt: 0,
+  recordsPromise: null,
   suggestions: [],
   items: [newItem()],
   settings: {
@@ -803,8 +806,9 @@ function enterApp() {
   populateCnaes();
   updateCustomCnaeFields();
   updatePreview();
+  hydrateRecordsCache();
   showView('gerador');
-  refreshRecordsCache();
+  refreshRecordsCache(true);
 }
 
 function logout() {
@@ -812,6 +816,7 @@ function logout() {
     callApi('encerrarSessao').catch(() => {});
   }
   sessionStorage.removeItem(SESSION_KEY);
+  sessionStorage.removeItem(RECORDS_CACHE_KEY);
   state.accessToken = '';
   state.localMode = false;
   window.location.reload();
@@ -856,7 +861,7 @@ async function saveQuote(status) {
         : `Orçamento ${state.folio} registrado como enviado.`,
       'success'
     );
-    await refreshRecordsCache();
+    await refreshRecordsCache(true);
     await runPostSaveIntegrations({
       folio: state.folio,
       status,
@@ -1064,14 +1069,60 @@ async function blobToBase64(blob) {
   return window.btoa(binary);
 }
 
-async function refreshRecordsCache() {
+async function refreshRecordsCache(force = false) {
+  const cacheIsFresh =
+    state.recordsLoadedAt &&
+    Date.now() - state.recordsLoadedAt < 15_000;
+  if (!force && cacheIsFresh) return state.records;
+  if (state.recordsPromise) return state.recordsPromise;
+
+  state.recordsPromise = (async () => {
+    try {
+      state.records = state.localMode
+        ? readLocalRecords()
+        : await callApi('listar');
+      state.recordsLoadedAt = Date.now();
+      persistRecordsCache();
+      updateDescriptionSuggestions();
+      return state.records;
+    } catch (error) {
+      console.warn('Não foi possível atualizar o histórico:', error);
+      return state.records;
+    } finally {
+      state.recordsPromise = null;
+    }
+  })();
+
+  return state.recordsPromise;
+}
+
+function hydrateRecordsCache() {
+  if (state.localMode || state.records.length) return;
+
   try {
-    state.records = state.localMode
-      ? readLocalRecords()
-      : await callApi('listar');
+    const cached = JSON.parse(sessionStorage.getItem(RECORDS_CACHE_KEY) || '{}');
+    if (!Array.isArray(cached.records)) return;
+    state.records = cached.records;
+    state.recordsLoadedAt = Number(cached.savedAt) || 0;
     updateDescriptionSuggestions();
-  } catch (error) {
-    console.warn('Não foi possível atualizar o histórico:', error);
+  } catch {
+    sessionStorage.removeItem(RECORDS_CACHE_KEY);
+  }
+}
+
+function persistRecordsCache() {
+  if (state.localMode) return;
+
+  try {
+    sessionStorage.setItem(
+      RECORDS_CACHE_KEY,
+      JSON.stringify({
+        savedAt: state.recordsLoadedAt || Date.now(),
+        records: state.records
+      })
+    );
+  } catch {
+    // O cache é apenas uma otimização; a aplicação continua sem ele.
   }
 }
 
@@ -1147,27 +1198,46 @@ async function renderRecords(view) {
 
   elements.recordsTitle.textContent = titles[view] || 'Orçamentos';
   elements.recordsList.replaceChildren();
-  elements.recordsFeedback.hidden = false;
-  elements.recordsFeedback.textContent = 'Buscando registros...';
+  const hasCachedRecords = state.records.length > 0;
+  if (hasCachedRecords) {
+    paintRecordList(view, status[view]);
+  } else {
+    elements.recordsFeedback.hidden = false;
+    elements.recordsFeedback.textContent = 'Buscando registros...';
+  }
 
   try {
     await refreshRecordsCache();
-    const records = state.records
-      .filter((record) => String(record.Status || record.status || recordData(record).status || '').toLowerCase() === status[view])
-      .sort(sortRecordsNewestFirst);
-
-    if (!records.length) {
-      elements.recordsFeedback.textContent = 'Nenhum orçamento nesta etapa.';
-      return;
-    }
-
-    elements.recordsFeedback.hidden = true;
-    records.forEach((record) => {
-      elements.recordsList.appendChild(createRecordCard(record, view));
-    });
+    paintRecordList(view, status[view]);
   } catch (error) {
     elements.recordsFeedback.textContent = friendlyError(error, 'Não foi possível carregar os registros.');
   }
+}
+
+function paintRecordList(view, expectedStatus) {
+  const records = state.records
+    .filter(
+      (record) =>
+        String(
+          record.Status ||
+            record.status ||
+            recordData(record).status ||
+            ''
+        ).toLowerCase() === expectedStatus
+    )
+    .sort(sortRecordsNewestFirst);
+
+  elements.recordsList.replaceChildren();
+  if (!records.length) {
+    elements.recordsFeedback.hidden = false;
+    elements.recordsFeedback.textContent = 'Nenhum orçamento nesta etapa.';
+    return;
+  }
+
+  elements.recordsFeedback.hidden = true;
+  records.forEach((record) => {
+    elements.recordsList.appendChild(createRecordCard(record, view));
+  });
 }
 
 function createRecordCard(record, view) {
@@ -1182,6 +1252,15 @@ function createRecordCard(record, view) {
     alert.className = 'follow-up-alert';
     alert.textContent = 'Retorno pendente há 5 dias úteis';
     clientBlock.appendChild(alert);
+  }
+  if (view === 'aceitos') {
+    const execution = getExecutionVisualState(data, record);
+    card.classList.add(`execution-${execution.kind}`);
+    const badge = document.createElement('span');
+    badge.className = `execution-status execution-status-${execution.kind}`;
+    badge.textContent = execution.label;
+    if (execution.error) badge.title = execution.error;
+    clientBlock.appendChild(badge);
   }
 
   card.append(
@@ -1225,11 +1304,7 @@ function createRecordActions(record, data, view) {
   actions.appendChild(openButton);
 
   if (view === 'enviados') {
-    const emailButton = actionButton('Abrir no Gmail', 'button-dark');
-    emailButton.addEventListener('click', () => openQuoteEmail(data.folio, emailButton));
-    actions.appendChild(emailButton);
-
-    const acceptButton = actionButton('Marcar aceito', 'button-primary');
+    const acceptButton = actionButton('Enviar para execução', 'button-primary');
     acceptButton.addEventListener('click', async () => {
       if (!window.confirm(`Enviar o orçamento ${data.folio} para execução?`)) return;
       setBusy(acceptButton, true, 'Enviando...');
@@ -1238,7 +1313,7 @@ function createRecordActions(record, data, view) {
       } catch (error) {
         elements.recordsFeedback.hidden = false;
         setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível enviar para execução.'), 'error');
-        setBusy(acceptButton, false, 'Marcar aceito');
+        setBusy(acceptButton, false, 'Enviar para execução');
       }
     });
     actions.appendChild(acceptButton);
@@ -1356,37 +1431,28 @@ async function updateRecordStatus(folio, newStatus, paid, paymentDate, refreshVi
     });
   }
 
-  await refreshRecordsCache();
+  updateCachedRecordStatus(folio, newStatus, result);
+  state.recordsLoadedAt = Date.now();
   if (refreshView) showView(newStatus === 'Aceito' ? 'aceitos' : 'enviados');
   return result;
 }
 
-async function openQuoteEmail(folio, button) {
-  if (state.localMode) {
-    setMessage(elements.recordsFeedback, 'O Gmail exige conexão com o backend.', 'error');
-    return;
-  }
+function updateCachedRecordStatus(folio, newStatus, result = {}) {
+  const record = state.records.find((item) => {
+    const data = recordData(item);
+    return String(data.folio || item.Folio || '') === String(folio);
+  });
+  if (!record) return;
 
-  const popup = window.open('about:blank', '_blank');
-  setBusy(button, true, 'Preparando...');
-
-  try {
-    const result = await callApi('criarRascunhoEmail', { folio });
-    if (!result.urlGmail) throw new Error('O backend não retornou o rascunho do Gmail.');
-    if (popup) {
-      popup.location.href = result.urlGmail;
-    } else {
-      window.location.href = result.urlGmail;
-    }
-    elements.recordsFeedback.hidden = false;
-    setMessage(elements.recordsFeedback, `Rascunho do orçamento ${folio} criado no Gmail.`, 'success');
-  } catch (error) {
-    popup?.close();
-    elements.recordsFeedback.hidden = false;
-    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível preparar o e-mail.'), 'error');
-  } finally {
-    setBusy(button, false, 'Abrir no Gmail');
+  const data = recordData(record);
+  data.status = newStatus;
+  if (String(newStatus).toLowerCase() === 'aceito') {
+    data.executionStatus = result.statusExecucao || 'Pendente';
+    record['Status Execução'] = data.executionStatus;
   }
+  record.Status = newStatus;
+  record.JSON_Dados = JSON.stringify(data);
+  persistRecordsCache();
 }
 
 async function registerClientReturn(folio, button) {
@@ -1405,7 +1471,7 @@ async function registerClientReturn(folio, button) {
     } else {
       await callApi('registrarRetorno', { folio });
     }
-    await refreshRecordsCache();
+    await refreshRecordsCache(true);
     showView('enviados');
   } catch (error) {
     elements.recordsFeedback.hidden = false;
@@ -1423,6 +1489,26 @@ function isFollowUpDue(data, record) {
   if (!value) return false;
   const due = new Date(`${normalizeDateInput(value)}T23:59:59`);
   return !Number.isNaN(due.getTime()) && due.getTime() <= Date.now();
+}
+
+function getExecutionVisualState(data, record) {
+  const status = String(
+    data.executionStatus ||
+    record['Status Execução'] ||
+    (data.urlExecucao || record['URL Execução'] ? 'Pronto' : 'Pendente')
+  ).toLowerCase();
+  const error = data.executionError || record['Erro Execução'] || '';
+
+  if (status === 'pronto') {
+    return { kind: 'ready', label: 'Em execução', error: '' };
+  }
+  if (status === 'erro') {
+    return { kind: 'error', label: 'Execução com pendência', error };
+  }
+  if (status === 'processando') {
+    return { kind: 'processing', label: 'Preparando execução', error: '' };
+  }
+  return { kind: 'pending', label: 'Execução na fila', error: '' };
 }
 
 function loadQuote(record) {
@@ -1612,6 +1698,10 @@ function updateLocalStatus(folio, status, paid, paymentDate) {
 
   const data = recordData(record);
   data.status = status;
+  if (String(status).toLowerCase() === 'aceito' && !data.executionStatus) {
+    data.executionStatus = 'Pendente';
+    record['Status Execução'] = 'Pendente';
+  }
   if (paid !== undefined) data.pago = paid;
   if (paymentDate !== undefined) data.dataPagamento = paymentDate || '';
 
@@ -1643,7 +1733,9 @@ function recordData(record) {
       dataPagamento: record?.['Data Pagamento'] || '',
       followUpDate: record?.['Follow-up em'] || '',
       retornoCliente: String(record?.['Retorno Cliente?']).toLowerCase() === 'sim',
-      urlExecucao: record?.['URL Execução'] || ''
+      urlExecucao: record?.['URL Execução'] || '',
+      executionStatus: record?.['Status Execução'] || '',
+      executionError: record?.['Erro Execução'] || ''
     };
   }
 }

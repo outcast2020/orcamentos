@@ -22,10 +22,13 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 - registra enviados, aceitos para execução, pagamento e data;
 - exige confirmação de envio por `contato@cordel2pontozero.com`;
 - gera PDF e imagem PNG;
-- cria no Gmail um rascunho com mensagem e PDF anexado;
+- mantém o envio de e-mail ao cliente temporariamente indisponível;
 - alerta a equipe após 5 dias úteis sem retorno do cliente;
-- cria automaticamente o pacote na pasta de execução e notifica coordenação e produção;
+- coloca os aceitos numa fila, cria o pacote na pasta de execução e notifica coordenação e produção;
+- sinaliza visualmente quando a execução está na fila, em processamento, pronta ou com pendência;
 - evita gravações duplicadas com bloqueio no frontend e idempotência no backend;
+- reduz recarregamentos com cache no navegador e no Apps Script;
+- mostra o último histórico disponível enquanto atualiza os dados em segundo plano;
 - mantém a assinatura da equipe fixa no documento;
 - usa a fonte Cordelina nos títulos como elemento da identidade visual;
 - protege os dados do backend com senha validada no Apps Script.
@@ -85,7 +88,7 @@ de integrações.
 - Google Apps Script para a API;
 - Google Sheets para registros;
 - Google Drive para PDFs, rascunhos e arquivos de execução;
-- Gmail para rascunhos de envio e notificações internas;
+- serviço de e-mail do Google para notificações internas;
 - arquivos JSON no Google Drive para cópia e retomada dos rascunhos;
 - GitHub Pages para hospedagem do frontend.
 
