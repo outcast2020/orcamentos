@@ -112,6 +112,7 @@ const state = {
   pdfFileId: '',
   pdfUrl: '',
   pdfFingerprint: '',
+  quoteStatus: 'Rascunho',
   saving: false,
   saveOperationId: '',
   records: [],
@@ -883,7 +884,9 @@ async function saveQuote(status, options = {}) {
       elements.statusMessage,
       status === 'Rascunho'
         ? `Rascunho ${state.folio} salvo com sucesso.`
-        : `Orçamento ${state.folio} registrado como enviado.`,
+        : status === 'Aceito'
+          ? `Orçamento ${state.folio} atualizado em execução.`
+          : `Orçamento ${state.folio} registrado como enviado.`,
       'success'
     );
     await refreshRecordsCache(true);
@@ -918,6 +921,10 @@ function applySaveResult(result, data = {}) {
     result.pdfFingerprint ||
     data.pdfFingerprint ||
     state.pdfFingerprint;
+  state.quoteStatus =
+    data.status ||
+    state.quoteStatus ||
+    'Rascunho';
   elements.docFolio.textContent = state.folio || 'Prévia';
   elements.editorTitle.textContent = state.folio
     ? `Orçamento ${state.folio}`
@@ -945,7 +952,7 @@ async function downloadPdf() {
         !state.pdfUrl ||
         state.pdfFingerprint !== currentFingerprint
       ) {
-        const result = await saveQuote('Rascunho', {
+        const result = await saveQuote(state.quoteStatus || 'Rascunho', {
           skipIntegrations: true
         });
         if (!result || !state.pdfUrl) {
@@ -1632,6 +1639,7 @@ function loadQuote(record) {
   state.pdfFileId = data.pdfFileId || '';
   state.pdfUrl = data.urlPdf || record['URL PDF'] || '';
   state.pdfFingerprint = data.pdfFingerprint || '';
+  state.quoteStatus = data.status || record.Status || 'Rascunho';
   state.items = normalizeItems(data.itens, data);
 
   elements.autorOrcamento.value = data.autor || elements.autorOrcamento.options[0].value;
@@ -1697,6 +1705,7 @@ function resetQuote(confirmReset) {
   state.pdfFileId = '';
   state.pdfUrl = '';
   state.pdfFingerprint = '';
+  state.quoteStatus = 'Rascunho';
   state.saveOperationId = '';
   state.items = [newItem()];
   elements.quoteForm.reset();
