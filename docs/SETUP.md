@@ -14,6 +14,7 @@ O setup usa inicialmente:
 - pasta de PDFs no Drive: `1dP_N7KUNf96EEGe3TYd_6npisjGm3jac`;
 - pasta de rascunhos JSON: `1c9iyM1PJPAlzLL3sFqsjAIwXrdCUgesc`;
 - pasta de aceitos / execução: `1SsCPoXW1TWtKS8ZQKH8uvnKHO11j5b_m`;
+- pasta de lixeira: criada automaticamente com o nome `Lixeira Cordel 2.0 - Orçamentos`;
 - aba: `Orçamentos`;
 - primeiro fólio: `00010`.
 
@@ -36,7 +37,9 @@ por uma sessão temporária. O navegador não guarda nem repete a senha nas
 operações seguintes.
 
 Os IDs também podem ser substituídos pelas propriedades `SHEET_ID`,
-`FOLDER_ID`, `DRAFT_FOLDER_ID` e `EXECUTION_FOLDER_ID`, caso o destino mude.
+`FOLDER_ID`, `DRAFT_FOLDER_ID`, `EXECUTION_FOLDER_ID` e `TRASH_FOLDER_ID`,
+caso o destino mude. Se `TRASH_FOLDER_ID` estiver vazio, `setupPlanilha`
+localiza ou cria a pasta automaticamente e grava seu ID.
 
 O `setupPlanilha` também cria:
 
@@ -57,6 +60,7 @@ O registro de execução deve indicar:
 - pasta configurada;
 - pasta de rascunhos configurada;
 - pasta de execução configurada;
+- pasta de lixeira configurada;
 - senha configurada;
 - aba encontrada;
 - gatilho de execução ativo;
@@ -84,7 +88,8 @@ Sempre que alterar `Code.gs`, edite a implantação existente e selecione uma
 
 O envio direto de orçamento ao cliente está temporariamente indisponível. O
 Apps Script usa e-mail somente para os alertas internos de acompanhamento e
-para notificar coordenação e produção quando um orçamento entra em execução.
+para notificar coordenação e produção quando o orçamento é finalizado como
+Enviado e quando entra em Execução. Essas notificações não levam anexos.
 
 ## 5. Conectar o frontend
 
@@ -104,21 +109,23 @@ Faça este percurso:
 
 1. entrar com a senha;
 2. criar um orçamento com dois itens;
-3. baixar o PDF e a imagem e conferir se ambos estão completos;
-4. salvar como rascunho e tentar clicar novamente durante a gravação;
-5. conferir o JSON e o PDF do fólio na pasta de rascunhos;
-6. abrir a aba Rascunhos e retomar;
-7. informar o e-mail do cliente e marcar a confirmação de envio;
-8. salvar como enviado e confirmar que o mesmo PDF foi movido para a pasta de
-   enviados, mantendo a mesma URL e o mesmo ID;
+3. salvar como rascunho e tentar clicar novamente durante a gravação;
+4. conferir que existe apenas o JSON na pasta de rascunhos, sem PDF e sem fólio definitivo;
+5. abrir a aba Rascunhos e retomar;
+6. informar o e-mail do cliente e marcar a confirmação de envio;
+7. finalizar como enviado, baixar o PDF e confirmar que abre corretamente;
+8. anotar o `pdfFileId` exibido por `diagnosticarIntegridadePdf`;
 9. abrir a aba Enviados e usar **Enviar para execução**;
-10. confirmar que o cartão muda imediatamente para **Execução na fila**;
-11. aguardar até um minuto e confirmar a mudança para **Em execução**;
-12. conferir que o mesmo arquivo foi movido para a pasta de execução e que as
-    notificações foram enviadas para coordenação e produção;
-13. informar pagamento e data em Aceitos / execução;
-14. conferir a linha correspondente na planilha;
-15. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
+10. confirmar que o cartão aparece em Aceitos / execução como **Em execução**;
+11. conferir que o mesmo arquivo foi movido para a pasta de execução e executar
+    novamente `diagnosticarIntegridadePdf`; `mesmoIdDuranteFluxo` deve ser `true`;
+12. confirmar que as duas notificações internas chegaram sem anexo;
+13. informar pagamento, data e andamento em Aceitos / execução;
+14. cancelar digitando exatamente o fólio, conferir a aba Lixeira e restaurar;
+15. repetir a finalização simultaneamente em dois navegadores e executar
+    `diagnosticarConcorrenciaEIdempotencia`; as listas de duplicados devem estar vazias;
+16. conferir a linha correspondente na planilha;
+17. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
     remoção de um CNAE.
 
 Depois da primeira atualização, execute uma vez a função `limparDuplicados`
@@ -133,6 +140,21 @@ Após instalar esta versão sobre uma implantação anterior, execute também
 `repararStatusExecucaoAnteriores`. A função transforma fólios numéricos como
 `10` em `00010` e marca como aceitos os registros que já tenham arquivo na
 pasta de execução.
+
+### Validação local desta versão — 25/06/2026
+
+- sintaxe de `app.js` e `Code.gs`: aprovada;
+- IDs usados pelo JavaScript e elementos do HTML: aprovados, sem ausências ou duplicações;
+- rascunho incompleto no navegador: salvo sem PDF e com o botão de PDF bloqueado;
+- aba Lixeira e ações coerentes de Enviados / Aceitos: renderizadas;
+- idempotência simulada: a repetição do mesmo `operationId` retornou o resultado anterior;
+- histórico de `operationId`: preservado entre gravações;
+- URL de PDF: gerada no formato de download direto do Drive;
+- sanitização Base64, validação obrigatória e preservação do `pdfFileId`: aprovadas nos testes locais.
+
+Drive, Sheets e MailApp só podem ser validados integralmente depois de colar o
+novo `Code.gs` e publicar uma nova versão do Web App. Complete os passos 7 a
+15 acima antes de considerar a implantação aprovada para uso real.
 
 ## 7. Publicar no GitHub Pages
 
@@ -149,9 +171,9 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 - Não renomeie os cabeçalhos da aba `Orçamentos`.
 - Não publique a senha em commits, capturas de tela ou documentação.
 - Ao mudar o percentual de ISS no formulário, o valor fica registrado em cada orçamento.
-- Ao salvar novamente, a cópia anterior do PDF é substituída para evitar duplicados.
-- O PDF é criado inicialmente na pasta de rascunhos e depois movido entre as
-  etapas sem mudar de ID ou URL.
+- Rascunhos nunca geram PDF; somente o JSON é atualizado.
+- O PDF definitivo é criado uma única vez na pasta Enviados e depois movido
+  para Execução sem mudar de ID.
 - O arquivo JSON do rascunho é atualizado no mesmo arquivo sempre que houver novo salvamento.
 - O fólio é protegido por bloqueio e cada gravação tem um identificador idempotente.
 - Leituras e atualizações coletivas usam arrays e uma única operação de
@@ -161,9 +183,10 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 - O navegador mostra o último histórico da sessão enquanto revalida os dados
   em segundo plano.
 - O `setupPlanilha` cria um gatilho diário para verificar follow-ups vencidos.
-- O `setupPlanilha` cria também um gatilho a cada minuto para processar a fila
-  de aceitos sem travar o clique do usuário.
-- Se uma execução falhar três vezes, corrija a configuração e execute
+- A passagem nova para execução é concluída na própria ação e preserva o
+  `pdfFileId`; o gatilho de execução permanece apenas para recuperar registros
+  antigos que tenham ficado pendentes.
+- Se um registro antigo permanecer com erro, corrija a configuração e execute
   `reenfileirarExecucoesComErro` uma vez no editor.
 - `Code.gs` está no `.gitignore`; atualize-o diretamente no Google Apps Script.
 - Integrações futuras permanecem invisíveis na interface e desativadas no

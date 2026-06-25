@@ -107,12 +107,15 @@ const state = {
   accessToken: '',
   localMode: false,
   folio: '',
+  draftKey: '',
   draftFileId: '',
   draftUrl: '',
   pdfFileId: '',
   pdfUrl: '',
+  pdfViewUrl: '',
   pdfFingerprint: '',
   quoteStatus: 'Rascunho',
+  cancelTarget: null,
   saving: false,
   saveOperationId: '',
   records: [],
@@ -139,6 +142,7 @@ function init() {
   renderItemsEditor();
   updateCustomCnaeFields();
   updatePreview();
+  updatePdfActionState();
 
   elements.officialSiteLink.href = OFFICIAL_SITE;
 
@@ -233,7 +237,16 @@ function cacheElements() {
     'view-records',
     'recordsTitle',
     'recordsFeedback',
-    'recordsList'
+    'recordsList',
+    'cancelQuoteDialog',
+    'cancelQuoteForm',
+    'closeCancelQuoteButton',
+    'abortCancelQuoteButton',
+    'confirmCancelQuoteButton',
+    'cancelQuoteFolio',
+    'cancelQuoteConfirmation',
+    'cancelQuoteReason',
+    'cancelQuoteMessage'
   ].forEach((id) => {
     elements[id] = document.getElementById(id);
   });
@@ -260,6 +273,12 @@ function bindEvents() {
   elements.settingsForm.addEventListener('submit', saveSettings);
   elements.settingsDialog.addEventListener('click', (event) => {
     if (event.target === elements.settingsDialog) closeSettings();
+  });
+  elements.closeCancelQuoteButton.addEventListener('click', closeCancelQuoteDialog);
+  elements.abortCancelQuoteButton.addEventListener('click', closeCancelQuoteDialog);
+  elements.cancelQuoteForm.addEventListener('submit', confirmQuoteCancellation);
+  elements.cancelQuoteDialog.addEventListener('click', (event) => {
+    if (event.target === elements.cancelQuoteDialog) closeCancelQuoteDialog();
   });
   elements.newQuoteButton.addEventListener('click', () => resetQuote(true));
   elements.addItemButton.addEventListener('click', addItem);
@@ -678,10 +697,12 @@ function collectQuoteData(status) {
   const totals = calculateTotals();
   return {
     folio: state.folio,
+    draftKey: state.draftKey,
     draftFileId: state.draftFileId,
     urlRascunho: state.draftUrl,
     pdfFileId: state.pdfFileId,
     urlPdf: state.pdfUrl,
+    pdfViewUrl: state.pdfViewUrl,
     pdfFingerprint: state.pdfFingerprint,
     operationId: state.saveOperationId,
     status,
@@ -715,6 +736,8 @@ function collectQuoteData(status) {
 
 function validateQuote(status) {
   clearValidation();
+  if (status === 'Rascunho') return true;
+
   const required = [
     elements.autorOrcamento,
     elements.dataEmissao,
@@ -837,6 +860,14 @@ function isBackendConfigured() {
 async function saveQuote(status, options = {}) {
   if (state.saving) return null;
   if (!validateQuote(status)) return null;
+  if (!['Rascunho', 'Enviado'].includes(status)) {
+    setMessage(
+      elements.statusMessage,
+      'Orçamentos enviados ou em execução não podem ser editados.',
+      'error'
+    );
+    return null;
+  }
 
   const button = status === 'Rascunho' ? elements.saveDraftButton : elements.saveSentButton;
   state.saving = true;
@@ -847,16 +878,37 @@ async function saveQuote(status, options = {}) {
   try {
     let data = collectQuoteData(status);
 
+    if (status === 'Rascunho') {
+      data.folio = '';
+      data.pdfFileId = '';
+      data.urlPdf = '';
+      data.pdfViewUrl = '';
+      data.pdfFingerprint = '';
+      const draftResult = state.localMode
+        ? saveLocalQuote(data)
+        : await callApi('salvarRascunho', { dados: data });
+      applySaveResult(draftResult, data);
+      state.saveOperationId = '';
+      setMessage(elements.statusMessage, 'Rascunho salvo com sucesso.', 'success');
+      await refreshRecordsCache(true);
+      return draftResult;
+    }
+
+    const finalOperationId = state.saveOperationId;
     if (!state.localMode && !state.folio) {
       const reservationData = {
         ...data,
         status: 'Rascunho',
+        folio: '',
+        operationId: createOperationId(),
         pdfBase64: ''
       };
-      const reservation = await callApi('salvar', { dados: reservationData });
+      const reservation = await callApi('reservarFolio', {
+        dados: reservationData
+      });
       applySaveResult(reservation, reservationData);
-      state.saveOperationId = createOperationId();
       data = collectQuoteData(status);
+      data.operationId = finalOperationId;
     }
 
     const fingerprint = createPdfFingerprint(data);
@@ -871,24 +923,18 @@ async function saveQuote(status, options = {}) {
       if (!pdfBlob || pdfBlob.size < 1000) {
         throw new Error('O PDF gerado ficou vazio.');
       }
+      data.pdfMimeType = pdfBlob.type || 'application/pdf';
+      data.pdfSize = pdfBlob.size;
       data.pdfBase64 = await blobToBase64(pdfBlob);
     }
 
     const result = state.localMode
       ? saveLocalQuote(data)
-      : await callApi('salvar', { dados: data });
+      : await callApi('finalizarComoEnviado', { dados: data });
 
     applySaveResult(result, data);
     state.saveOperationId = '';
-    setMessage(
-      elements.statusMessage,
-      status === 'Rascunho'
-        ? `Rascunho ${state.folio} salvo com sucesso.`
-        : status === 'Aceito'
-          ? `Orçamento ${state.folio} atualizado em execução.`
-          : `Orçamento ${state.folio} registrado como enviado.`,
-      'success'
-    );
+    setMessage(elements.statusMessage, `Orçamento ${state.folio} registrado como enviado.`, 'success');
     await refreshRecordsCache(true);
     if (!options.skipIntegrations) {
       await runPostSaveIntegrations({
@@ -909,6 +955,7 @@ async function saveQuote(status, options = {}) {
 
 function applySaveResult(result, data = {}) {
   state.folio = result.folio || data.folio || state.folio;
+  state.draftKey = result.draftKey || data.draftKey || state.draftKey;
   state.draftFileId =
     result.draftFileId || data.draftFileId || state.draftFileId;
   state.draftUrl =
@@ -917,12 +964,15 @@ function applySaveResult(result, data = {}) {
     result.pdfFileId || data.pdfFileId || state.pdfFileId;
   state.pdfUrl =
     result.urlPdf || data.urlPdf || state.pdfUrl;
+  state.pdfViewUrl =
+    result.pdfViewUrl || data.pdfViewUrl || state.pdfViewUrl;
   state.pdfFingerprint =
     result.pdfFingerprint ||
     data.pdfFingerprint ||
     state.pdfFingerprint;
   state.quoteStatus =
     data.status ||
+    result.status ||
     state.quoteStatus ||
     'Rascunho';
   elements.docFolio.textContent = state.folio || 'Prévia';
@@ -930,61 +980,35 @@ function applySaveResult(result, data = {}) {
     ? `Orçamento ${state.folio}`
     : 'Novo orçamento';
   updatePreview();
+  updatePdfActionState();
 }
 
 async function downloadPdf() {
-  if (!validateQuote('Rascunho')) return;
-  setBusy(elements.downloadPdfButton, true, 'Preparando...');
-  setMessage(elements.statusMessage, 'Preparando o PDF...', '');
-
-  try {
-    if (typeof window.html2pdf !== 'function') {
-      throw new Error('O gerador de PDF não foi carregado. Verifique sua conexão.');
-    }
-
-    if (!state.localMode) {
-      const popup = window.open('about:blank', '_blank');
-      const currentFingerprint = createPdfFingerprint(
-        collectQuoteData('Rascunho')
-      );
-
-      if (
-        !state.pdfUrl ||
-        state.pdfFingerprint !== currentFingerprint
-      ) {
-        const result = await saveQuote(state.quoteStatus || 'Rascunho', {
-          skipIntegrations: true
-        });
-        if (!result || !state.pdfUrl) {
-          popup?.close();
-          throw new Error('Não foi possível armazenar o PDF antes de abri-lo.');
-        }
-      }
-
-      if (popup) {
-        popup.location.href = state.pdfUrl;
-      } else {
-        window.open(state.pdfUrl, '_blank', 'noopener');
-      }
-      setMessage(
-        elements.statusMessage,
-        `PDF armazenado do orçamento ${state.folio} aberto com sucesso.`,
-        'success'
-      );
-      return;
-    }
-
-    const blob = await createPdfBlob();
-    if (!blob || blob.size < 1000) {
-      throw new Error('O PDF gerado ficou vazio. Tente novamente.');
-    }
-    downloadBlob(blob, exportFilename('pdf'));
-    setMessage(elements.statusMessage, 'PDF gerado com sucesso.', 'success');
-  } catch (error) {
-    setMessage(elements.statusMessage, friendlyError(error, 'Não foi possível gerar o PDF.'), 'error');
-  } finally {
-    setBusy(elements.downloadPdfButton, false, 'Baixar PDF');
+  if (!state.pdfUrl || String(state.quoteStatus).toLowerCase() === 'rascunho') {
+    setMessage(
+      elements.statusMessage,
+      'O PDF definitivo fica disponível somente após finalizar como enviado.',
+      'error'
+    );
+    return;
   }
+
+  window.open(state.pdfUrl, '_blank', 'noopener');
+  setMessage(
+    elements.statusMessage,
+    `Download do orçamento ${state.folio} iniciado.`,
+    'success'
+  );
+}
+
+function updatePdfActionState() {
+  const available =
+    Boolean(state.pdfUrl) &&
+    String(state.quoteStatus).toLowerCase() !== 'rascunho';
+  elements.downloadPdfButton.disabled = !available;
+  elements.downloadPdfButton.title = available
+    ? 'Baixar o PDF definitivo armazenado'
+    : 'Disponível após finalizar como enviado';
 }
 
 function createPdfFingerprint(data) {
@@ -1308,12 +1332,14 @@ async function renderRecords(view) {
   const titles = {
     rascunhos: 'Rascunhos',
     enviados: 'Enviados',
-    aceitos: 'Aceitos / execução'
+    aceitos: 'Aceitos / execução',
+    lixeira: 'Lixeira'
   };
   const status = {
     rascunhos: 'rascunho',
     enviados: 'enviado',
-    aceitos: 'aceito'
+    aceitos: 'aceito',
+    lixeira: 'cancelado'
   };
 
   elements.recordsTitle.textContent = titles[view] || 'Orçamentos';
@@ -1384,7 +1410,11 @@ function createRecordCard(record, view) {
   }
 
   card.append(
-    recordBlock('Fólio', data.folio || record.Folio || '—', 'record-folio'),
+    recordBlock(
+      'Fólio',
+      data.folio || record.Folio || (view === 'rascunhos' ? 'Rascunho' : '—'),
+      'record-folio'
+    ),
     clientBlock,
     recordBlock('Atualizado em', record['Atualizado em'] || record['Data Criação'] || '—', 'record-meta')
   );
@@ -1419,9 +1449,11 @@ function createRecordActions(record, data, view) {
   const actions = document.createElement('div');
   actions.className = 'record-actions';
 
-  const openButton = actionButton(view === 'rascunhos' ? 'Retomar' : 'Abrir', 'button-secondary');
-  openButton.addEventListener('click', () => loadQuote(record));
-  actions.appendChild(openButton);
+  if (view === 'rascunhos') {
+    const openButton = actionButton('Retomar', 'button-secondary');
+    openButton.addEventListener('click', () => loadQuote(record));
+    actions.appendChild(openButton);
+  }
 
   if (view === 'enviados') {
     const acceptButton = actionButton('Enviar para execução', 'button-primary');
@@ -1443,6 +1475,24 @@ function createRecordActions(record, data, view) {
       returnButton.addEventListener('click', () => registerClientReturn(data.folio, returnButton));
       actions.appendChild(returnButton);
     }
+
+    const cancelButton = actionButton('Cancelar', 'button-danger');
+    cancelButton.addEventListener('click', () => openCancelQuoteDialog(record));
+    actions.appendChild(cancelButton);
+  }
+
+  if (view === 'lixeira') {
+    const restoreButton = actionButton('Restaurar', 'button-primary');
+    restoreButton.addEventListener('click', () =>
+      restoreCancelledQuote(record, restoreButton)
+    );
+    actions.appendChild(restoreButton);
+
+    const deleteButton = actionButton('Excluir definitivamente', 'button-danger');
+    deleteButton.addEventListener('click', () =>
+      permanentlyDeleteQuote(record, deleteButton)
+    );
+    actions.appendChild(deleteButton);
   }
 
   const draftUrl = record['URL Rascunho'] || data.urlRascunho;
@@ -1456,16 +1506,7 @@ function createRecordActions(record, data, view) {
     actions.appendChild(draftLink);
   }
 
-  const pdfUrl = record['URL PDF'] || data.urlPdf;
-  if (pdfUrl) {
-    const link = document.createElement('a');
-    link.className = 'button button-dark';
-    link.href = pdfUrl;
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.textContent = 'PDF';
-    actions.appendChild(link);
-  }
+  appendPdfDownload(actions, record, data);
 
   return actions;
 }
@@ -1485,7 +1526,7 @@ function createPaymentEditor(record, data) {
   date.value = normalizeDateInput(data.dataPagamento || record['Data Pagamento'] || '');
   date.disabled = !checkbox.checked;
 
-  const save = actionButton('Salvar', 'button-primary');
+  const save = actionButton('Salvar pagamento', 'button-primary');
   checkbox.addEventListener('change', () => {
     date.disabled = !checkbox.checked;
     if (checkbox.checked && !date.value) date.value = todayIso();
@@ -1497,7 +1538,7 @@ function createPaymentEditor(record, data) {
       await updateRecordStatus(data.folio, 'Aceito', checkbox.checked, date.value, false);
       save.textContent = 'Salvo';
       setTimeout(() => {
-        save.textContent = 'Salvar';
+        save.textContent = 'Salvar pagamento';
       }, 1400);
     } catch {
       save.textContent = 'Tentar novamente';
@@ -1508,23 +1549,32 @@ function createPaymentEditor(record, data) {
     }
   });
 
-  const open = actionButton('Abrir', 'button-secondary');
-  open.addEventListener('click', () => loadQuote(record));
+  editor.append(label, date, save);
+  appendPdfDownload(editor, record, data);
 
-  editor.append(label, date, save, open);
+  const progressButton = actionButton('Atualizar andamento', 'button-secondary');
+  progressButton.addEventListener('click', () =>
+    updateExecutionProgress(record, progressButton)
+  );
+  editor.appendChild(progressButton);
 
-  const executionUrl = record['URL Execução'] || data.urlExecucao;
-  if (executionUrl) {
-    const executionLink = document.createElement('a');
-    executionLink.className = 'button button-dark';
-    executionLink.href = executionUrl;
-    executionLink.target = '_blank';
-    executionLink.rel = 'noopener';
-    executionLink.textContent = 'Execução';
-    editor.appendChild(executionLink);
-  }
+  const cancelButton = actionButton('Cancelar', 'button-danger');
+  cancelButton.addEventListener('click', () => openCancelQuoteDialog(record));
+  editor.appendChild(cancelButton);
 
   return editor;
+}
+
+function appendPdfDownload(container, record, data) {
+  const pdfUrl = record['URL PDF'] || data.urlPdf;
+  if (!pdfUrl) return;
+  const link = document.createElement('a');
+  link.className = 'button button-dark';
+  link.href = pdfUrl;
+  link.target = '_blank';
+  link.rel = 'noopener';
+  link.textContent = 'Baixar PDF';
+  container.appendChild(link);
 }
 
 function actionButton(text, variant) {
@@ -1547,7 +1597,8 @@ async function updateRecordStatus(folio, newStatus, paid, paymentDate, refreshVi
       folio,
       novoStatus: newStatus,
       pago: paid,
-      dataPagamento: paymentDate
+      dataPagamento: paymentDate,
+      operationId: createOperationId()
     });
   }
 
@@ -1573,6 +1624,184 @@ function updateCachedRecordStatus(folio, newStatus, result = {}) {
   record.Status = newStatus;
   record.JSON_Dados = JSON.stringify(data);
   persistRecordsCache();
+}
+
+function openCancelQuoteDialog(record) {
+  const data = recordData(record);
+  const folio = String(data.folio || record.Folio || '').trim();
+  if (!folio) return;
+  state.cancelTarget = { record, data, folio };
+  elements.cancelQuoteFolio.textContent = folio;
+  elements.cancelQuoteConfirmation.value = '';
+  elements.cancelQuoteReason.value = '';
+  setMessage(elements.cancelQuoteMessage, '', '');
+  elements.cancelQuoteDialog.showModal();
+  elements.cancelQuoteConfirmation.focus();
+}
+
+function closeCancelQuoteDialog() {
+  elements.cancelQuoteDialog.close();
+  state.cancelTarget = null;
+}
+
+async function confirmQuoteCancellation(event) {
+  event.preventDefault();
+  const target = state.cancelTarget;
+  if (!target) return;
+  if (elements.cancelQuoteConfirmation.value.trim() !== target.folio) {
+    setMessage(
+      elements.cancelQuoteMessage,
+      'O fólio digitado não corresponde ao orçamento.',
+      'error'
+    );
+    return;
+  }
+
+  setBusy(elements.confirmCancelQuoteButton, true, 'Cancelando...');
+  try {
+    if (state.localMode) {
+      changeLocalRecordState(target.folio, 'Cancelado', {
+        canceladoEm: new Date().toLocaleString('pt-BR'),
+        canceladoPor: target.data.autor || 'Usuário local',
+        motivoCancelamento: elements.cancelQuoteReason.value.trim(),
+        statusAntesCancelamento: target.data.status || target.record.Status
+      });
+    } else {
+      await callApi('cancelarOrcamento', {
+        folio: target.folio,
+        motivo: elements.cancelQuoteReason.value.trim(),
+        canceladoPor: target.data.autor || '',
+        operationId: createOperationId()
+      });
+    }
+    await refreshRecordsCache(true);
+    closeCancelQuoteDialog();
+    showView('lixeira');
+  } catch (error) {
+    setMessage(
+      elements.cancelQuoteMessage,
+      friendlyError(error, 'Não foi possível cancelar o orçamento.'),
+      'error'
+    );
+  } finally {
+    setBusy(elements.confirmCancelQuoteButton, false, 'Cancelar orçamento');
+  }
+}
+
+async function restoreCancelledQuote(record, button) {
+  const data = recordData(record);
+  const folio = String(data.folio || record.Folio || '');
+  const confirmation = window.prompt(
+    `Para restaurar, digite exatamente o fólio ${folio}:`
+  );
+  if (confirmation === null) return;
+  if (confirmation.trim() !== folio) {
+    setMessage(elements.recordsFeedback, 'Fólio incorreto. Restauração cancelada.', 'error');
+    elements.recordsFeedback.hidden = false;
+    return;
+  }
+
+  setBusy(button, true, 'Restaurando...');
+  try {
+    if (state.localMode) {
+      changeLocalRecordState(
+        folio,
+        data.statusAntesCancelamento || 'Enviado',
+        { restauradoEm: new Date().toLocaleString('pt-BR') }
+      );
+    } else {
+      await callApi('restaurarOrcamento', {
+        folio,
+        operationId: createOperationId()
+      });
+    }
+    await refreshRecordsCache(true);
+    showView('lixeira');
+  } catch (error) {
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível restaurar.'), 'error');
+    setBusy(button, false, 'Restaurar');
+  }
+}
+
+async function permanentlyDeleteQuote(record, button) {
+  const data = recordData(record);
+  const folio = String(data.folio || record.Folio || '');
+  const confirmation = window.prompt(
+    `Esta ação remove os arquivos, mas preserva o histórico na planilha. Digite ${folio}:`
+  );
+  if (confirmation === null) return;
+  if (confirmation.trim() !== folio) {
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, 'Fólio incorreto. Exclusão cancelada.', 'error');
+    return;
+  }
+
+  setBusy(button, true, 'Excluindo...');
+  try {
+    if (state.localMode) {
+      changeLocalRecordState(folio, 'Excluído', {
+        excluidoEm: new Date().toLocaleString('pt-BR')
+      });
+    } else {
+      await callApi('excluirDefinitivamente', {
+        folio,
+        operationId: createOperationId()
+      });
+    }
+    await refreshRecordsCache(true);
+    showView('lixeira');
+  } catch (error) {
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível excluir.'), 'error');
+    setBusy(button, false, 'Excluir definitivamente');
+  }
+}
+
+async function updateExecutionProgress(record, button) {
+  const data = recordData(record);
+  const folio = String(data.folio || record.Folio || '');
+  const progress = window.prompt(
+    'Informe o andamento. Digite “Concluído” para encerrar esta execução.',
+    data.andamento || 'Em execução'
+  );
+  if (progress === null || !progress.trim()) return;
+
+  setBusy(button, true, 'Atualizando...');
+  try {
+    if (state.localMode) {
+      const completed = progress.trim().toLowerCase() === 'concluído';
+      changeLocalRecordState(folio, completed ? 'Concluído' : 'Aceito', {
+        andamento: progress.trim(),
+        concluidoEm: completed ? new Date().toLocaleString('pt-BR') : ''
+      });
+    } else {
+      await callApi('atualizarAndamento', {
+        folio,
+        andamento: progress.trim(),
+        operationId: createOperationId()
+      });
+    }
+    await refreshRecordsCache(true);
+    showView('aceitos');
+  } catch (error) {
+    elements.recordsFeedback.hidden = false;
+    setMessage(elements.recordsFeedback, friendlyError(error, 'Não foi possível atualizar.'), 'error');
+    setBusy(button, false, 'Atualizar andamento');
+  }
+}
+
+function changeLocalRecordState(folio, status, changes = {}) {
+  const records = readLocalRecords();
+  const record = records.find((item) => String(item.Folio || recordData(item).folio) === String(folio));
+  if (!record) throw new Error('Fólio não encontrado.');
+  const data = recordData(record);
+  Object.assign(data, changes, { status });
+  record.Status = status;
+  record['Atualizado em'] = new Date().toLocaleString('pt-BR');
+  record.JSON_Dados = JSON.stringify(data);
+  localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records));
+  state.records = records;
 }
 
 async function registerClientReturn(folio, button) {
@@ -1633,13 +1862,25 @@ function getExecutionVisualState(data, record) {
 
 function loadQuote(record) {
   const data = recordData(record);
+  const currentStatus = String(data.status || record.Status || 'Rascunho');
+  if (currentStatus.toLowerCase() !== 'rascunho') {
+    elements.recordsFeedback.hidden = false;
+    setMessage(
+      elements.recordsFeedback,
+      'Orçamentos enviados ou em execução são imutáveis.',
+      'error'
+    );
+    return;
+  }
   state.folio = data.folio || record.Folio || '';
+  state.draftKey = data.draftKey || '';
   state.draftFileId = data.draftFileId || '';
   state.draftUrl = data.urlRascunho || record['URL Rascunho'] || '';
   state.pdfFileId = data.pdfFileId || '';
   state.pdfUrl = data.urlPdf || record['URL PDF'] || '';
+  state.pdfViewUrl = data.pdfViewUrl || '';
   state.pdfFingerprint = data.pdfFingerprint || '';
-  state.quoteStatus = data.status || record.Status || 'Rascunho';
+  state.quoteStatus = currentStatus;
   state.items = normalizeItems(data.itens, data);
 
   elements.autorOrcamento.value = data.autor || elements.autorOrcamento.options[0].value;
@@ -1656,13 +1897,22 @@ function loadQuote(record) {
   elements.condicaoPagamento.value = data.condicaoPagamento || 'Via Pix (chave CNPJ), mediante emissão de nota fiscal.';
   elements.naoInclusos.value = data.naoInclusos || '';
   elements.enviadoEmail.checked = Boolean(data.enviadoEmail) || String(record['Enviado Email?']).toLowerCase() === 'sim';
-  elements.editorTitle.textContent = `Orçamento ${state.folio}`;
+  elements.editorTitle.textContent = state.folio
+    ? `Orçamento ${state.folio}`
+    : 'Rascunho';
 
   renderItemsEditor();
   updateCustomCnaeFields();
   updateDescriptionSuggestions();
   updatePreview();
-  setMessage(elements.statusMessage, `Orçamento ${state.folio} carregado para edição.`, 'success');
+  updatePdfActionState();
+  setMessage(
+    elements.statusMessage,
+    state.folio
+      ? `Orçamento ${state.folio} carregado para edição.`
+      : 'Rascunho carregado para edição.',
+    'success'
+  );
   showView('gerador');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
@@ -1700,12 +1950,15 @@ function resetQuote(confirmReset) {
   }
 
   state.folio = '';
+  state.draftKey = '';
   state.draftFileId = '';
   state.draftUrl = '';
   state.pdfFileId = '';
   state.pdfUrl = '';
+  state.pdfViewUrl = '';
   state.pdfFingerprint = '';
   state.quoteStatus = 'Rascunho';
+  state.cancelTarget = null;
   state.saveOperationId = '';
   state.items = [newItem()];
   elements.quoteForm.reset();
@@ -1719,6 +1972,7 @@ function resetQuote(confirmReset) {
   updateCustomCnaeFields();
   updateDescriptionSuggestions();
   updatePreview();
+  updatePdfActionState();
   setMessage(elements.statusMessage, '', '');
 }
 
@@ -1753,17 +2007,22 @@ async function callApi(action, payload = {}) {
 function saveLocalQuote(data) {
   const records = readLocalRecords();
   const now = new Date().toLocaleString('pt-BR');
+  const isDraft = String(data.status).toLowerCase() === 'rascunho';
 
-  if (!data.folio) {
+  if (!data.folio && !isDraft) {
     const max = records.reduce((value, record) => {
       const number = parseInt(String(record.Folio || '').replace(/\D/g, ''), 10);
       return Number.isFinite(number) ? Math.max(value, number) : value;
     }, 9);
     data.folio = String(max + 1).padStart(5, '0');
   }
+  if (isDraft) {
+    data.folio = '';
+    data.draftKey = data.draftKey || `draft-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  }
 
   const record = {
-    Folio: data.folio,
+    Folio: data.folio || '',
     Status: data.status,
     'Data Criação': now,
     'Atualizado em': now,
@@ -1783,7 +2042,12 @@ function saveLocalQuote(data) {
     JSON_Dados: JSON.stringify(data)
   };
 
-  const existing = records.findIndex((item) => item.Folio === data.folio);
+  const existing = records.findIndex((item) => {
+    const current = recordData(item);
+    if (data.draftKey && current.draftKey === data.draftKey) return true;
+    return Boolean(data.folio) &&
+      String(item.Folio || current.folio) === String(data.folio);
+  });
   if (existing >= 0) {
     record['Data Criação'] = records[existing]['Data Criação'];
     records[existing] = record;
@@ -1793,7 +2057,12 @@ function saveLocalQuote(data) {
 
   localStorage.setItem(LOCAL_RECORDS_KEY, JSON.stringify(records));
   state.records = records;
-  return { sucesso: true, folio: data.folio };
+  return {
+    sucesso: true,
+    folio: data.folio || '',
+    draftKey: data.draftKey || '',
+    status: data.status
+  };
 }
 
 function readLocalRecords() {
@@ -1859,6 +2128,8 @@ function recordData(record) {
       enviadoEmail: String(record?.['Enviado Email?']).toLowerCase() === 'sim',
       pago: String(record?.['Pago?']).toLowerCase() === 'sim',
       dataPagamento: record?.['Data Pagamento'] || '',
+      urlPdf: record?.['URL PDF'] || '',
+      pdfViewUrl: '',
       followUpDate: record?.['Follow-up em'] || '',
       retornoCliente: String(record?.['Retorno Cliente?']).toLowerCase() === 'sim',
       urlExecucao: record?.['URL Execução'] || '',

@@ -168,6 +168,17 @@ img {
   background: #292b25;
 }
 
+.button-danger {
+  border-color: var(--danger);
+  background: var(--danger);
+  color: #fff;
+}
+
+.button-danger:hover {
+  border-color: #8f2d26;
+  background: #8f2d26;
+}
+
 .button-ghost {
   border-color: rgba(255, 255, 255, 0.2);
   background: transparent;
@@ -1201,6 +1212,20 @@ textarea[aria-invalid="true"] {
   padding: 0;
   background: transparent;
   box-shadow: 0 28px 90px rgba(0, 0, 0, 0.34);
+}
+
+.confirm-dialog {
+  width: min(560px, calc(100% - 28px));
+}
+
+.confirm-card .settings-section {
+  align-items: stretch;
+}
+
+.confirm-card .settings-section > p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
 }
 
 .settings-dialog::backdrop {

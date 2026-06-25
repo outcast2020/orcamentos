@@ -18,18 +18,19 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 - reaproveita descrições anteriores organizadas pelo CNAE;
 - usa fólio sequencial a partir de `00010`;
 - salva rascunhos e permite retomá-los;
-- mantém cada rascunho também como arquivo JSON simples em uma pasta do Drive;
+- mantém cada rascunho somente como JSON em uma pasta do Drive, sem PDF e sem consumir fólio;
 - registra enviados, aceitos para execução, pagamento e data;
 - exige confirmação de envio por `contato@cordel2pontozero.com`;
 - gera PDF e imagem PNG;
 - gera o PDF definitivo somente depois de reservar o fólio;
-- mantém um único arquivo PDF e o move de rascunhos para enviados e execução;
+- cria um único PDF na pasta Enviados e move esse mesmo arquivo para Execução sem mudar o `pdfFileId`;
 - mantém a imagem da equipe proporcional e somente no fechamento da página final;
 - mantém o envio de e-mail ao cliente temporariamente indisponível;
 - alerta a equipe após 5 dias úteis sem retorno do cliente;
-- coloca os aceitos numa fila, cria o pacote na pasta de execução e notifica coordenação e produção;
+- notifica coordenação e produção, sem anexo, ao finalizar o envio e ao iniciar a execução;
+- permite cancelar com confirmação exata do fólio, restaurar pela Lixeira e excluir arquivos preservando o histórico da planilha;
 - normaliza fólios antigos como `10` para `00010` e repara estados anteriores de execução;
-- sinaliza visualmente quando a execução está na fila, em processamento, pronta ou com pendência;
+- sinaliza visualmente quando o orçamento está em execução;
 - evita gravações duplicadas com bloqueio no frontend e idempotência no backend;
 - reduz recarregamentos com cache no navegador e no Apps Script;
 - mostra o último histórico disponível enquanto atualiza os dados em segundo plano;
@@ -68,6 +69,11 @@ Recurso-Web/
 2. Implante o `Code.gs` como Web App.
 3. Cole a URL terminada em `/exec` no arquivo `config.js`.
 4. Teste o fluxo completo antes de ativar o GitHub Pages.
+
+O teste de aceitação deve confirmar que o `pdfFileId` retornado em Enviados é
+exatamente o mesmo depois da passagem para Aceitos / execução. As funções
+`diagnosticarConcorrenciaEIdempotencia` e `diagnosticarIntegridadePdf` ajudam
+a conferir o resultado diretamente no Apps Script.
 
 > A senha não deve ser escrita em `app.js`, `config.js`, `README.md` ou em qualquer arquivo público. Ela fica em uma Propriedade do script no Google Apps Script.
 

@@ -65,6 +65,7 @@
         <button class="nav-button" type="button" data-view="rascunhos">Rascunhos</button>
         <button class="nav-button" type="button" data-view="enviados">Enviados</button>
         <button class="nav-button" type="button" data-view="aceitos">Aceitos / execução</button>
+        <button class="nav-button" type="button" data-view="lixeira">Lixeira</button>
       </nav>
 
       <div class="topbar-actions">
@@ -455,6 +456,41 @@
         <div>
           <button class="button button-secondary" id="cancelSettingsButton" type="button">Cancelar</button>
           <button class="button button-primary" id="saveSettingsButton" type="submit">Salvar</button>
+        </div>
+      </footer>
+    </form>
+  </dialog>
+
+  <dialog class="settings-dialog confirm-dialog" id="cancelQuoteDialog" aria-labelledby="cancelQuoteTitle">
+    <form class="settings-card confirm-card" id="cancelQuoteForm">
+      <header class="settings-header">
+        <div>
+          <p class="eyebrow">Confirmação obrigatória</p>
+          <h2 id="cancelQuoteTitle">Cancelar orçamento</h2>
+        </div>
+        <button class="dialog-close" id="closeCancelQuoteButton" type="button" aria-label="Fechar cancelamento">×</button>
+      </header>
+
+      <section class="settings-section settings-section-stack">
+        <p>
+          Para cancelar, digite exatamente o fólio
+          <strong id="cancelQuoteFolio"></strong>.
+        </p>
+        <label class="field">
+          <span>Confirme o fólio</span>
+          <input id="cancelQuoteConfirmation" type="text" autocomplete="off" required>
+        </label>
+        <label class="field">
+          <span>Motivo opcional</span>
+          <textarea id="cancelQuoteReason" rows="3" maxlength="500"></textarea>
+        </label>
+      </section>
+
+      <footer class="settings-footer">
+        <p class="form-message" id="cancelQuoteMessage" role="status"></p>
+        <div>
+          <button class="button button-secondary" id="abortCancelQuoteButton" type="button">Voltar</button>
+          <button class="button button-danger" id="confirmCancelQuoteButton" type="submit">Cancelar orçamento</button>
         </div>
       </footer>
     </form>
