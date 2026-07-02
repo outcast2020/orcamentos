@@ -20,6 +20,14 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 - salva rascunhos e permite retomá-los;
 - mantém cada rascunho somente como JSON em uma pasta do Drive, sem PDF e sem consumir fólio;
 - registra enviados, aceitos para execução, pagamento e data;
+- mostra data prevista e condição de pagamento no cartão de Aceitos / execução;
+- mantém os orçamentos concluídos visíveis em Aceitos / execução, com selo próprio;
+- gera o resumo de preenchimento da NFS-e (Nota Salvador) a partir do orçamento,
+  com códigos CNAE → item da lista, CTISS, NBS e indicadores vindos de
+  `data/cnae-fiscal.json`, botão de copiar por campo e PDF com marca
+  d'água "sem valor fiscal";
+- compartilha os PDFs definitivos por link de leitura para o download funcionar
+  em qualquer navegador;
 - exige confirmação de envio por `contato@cordel2pontozero.com`;
 - gera PDF e imagem PNG;
 - gera o PDF definitivo somente depois de reservar o fólio;
@@ -47,9 +55,12 @@ Recurso-Web/
 ├── index.html          Interface do gerador
 ├── style.css           Visual responsivo e impressão
 ├── app.js              Formulário, cálculos, PDF, imagem e integração
+├── nfse-resumo.js      Resumo de preenchimento da NFS-e (Nota Salvador)
 ├── config.js           URL pública do Web App
 ├── integrations.js     Contrato público, sem segredos, para integrações futuras
 ├── Code.gs             Backend local do Google Apps Script (ignorado pelo Git)
+├── data/
+│   └── cnae-fiscal.json  CNAE → item da lista, CTISS, NBS e indicadores
 ├── README.md
 ├── docs/
 │   └── SETUP.md        Publicação passo a passo

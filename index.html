@@ -11,6 +11,7 @@
   <script defer src="assets/vendor/html2pdf.bundle.min.js"></script>
   <script defer src="config.js"></script>
   <script defer src="integrations.js"></script>
+  <script defer src="nfse-resumo.js"></script>
   <script defer src="app.js"></script>
 </head>
 <body>
@@ -415,6 +416,17 @@
         </div>
         <div class="records-feedback" id="recordsFeedback">Carregando...</div>
         <div class="records-list" id="recordsList"></div>
+      </section>
+
+      <section class="records-view nfse-view" id="view-nfse" hidden>
+        <div class="records-header">
+          <div>
+            <p class="eyebrow">Nota fiscal</p>
+            <h2 id="nfseTitle">Resumo NFS-e</h2>
+          </div>
+          <button class="button button-secondary" id="nfseBackButton" type="button">Voltar para Aceitos</button>
+        </div>
+        <div class="nfse-content" id="nfseContent"></div>
       </section>
     </main>
   </div>

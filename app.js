@@ -235,6 +235,10 @@ function cacheElements() {
     'docNaoInclusos',
     'view-gerador',
     'view-records',
+    'view-nfse',
+    'nfseTitle',
+    'nfseContent',
+    'nfseBackButton',
     'recordsTitle',
     'recordsFeedback',
     'recordsList',
@@ -280,6 +284,7 @@ function bindEvents() {
   elements.cancelQuoteDialog.addEventListener('click', (event) => {
     if (event.target === elements.cancelQuoteDialog) closeCancelQuoteDialog();
   });
+  elements.nfseBackButton.addEventListener('click', () => showView('aceitos'));
   elements.newQuoteButton.addEventListener('click', () => resetQuote(true));
   elements.addItemButton.addEventListener('click', addItem);
   elements.saveDraftButton.addEventListener('click', () => saveQuote('Rascunho'));
@@ -840,6 +845,7 @@ function enterApp() {
   hydrateRecordsCache();
   showView('gerador');
   refreshRecordsCache(true);
+  window.CORDEL_NFSE?.carregar?.().catch(() => {});
 }
 
 function logout() {
@@ -1316,14 +1322,16 @@ function applyDescriptionSuggestion() {
 
 function showView(view) {
   const isGenerator = view === 'gerador';
+  const isNfse = view === 'nfse';
   elements['view-gerador'].hidden = !isGenerator;
-  elements['view-records'].hidden = isGenerator;
+  elements['view-nfse'].hidden = !isNfse;
+  elements['view-records'].hidden = isGenerator || isNfse;
 
   document.querySelectorAll('.nav-button').forEach((button) => {
     button.classList.toggle('is-active', button.dataset.view === view);
   });
 
-  if (!isGenerator) {
+  if (!isGenerator && !isNfse) {
     renderRecords(view);
   }
 }
@@ -1338,7 +1346,7 @@ async function renderRecords(view) {
   const status = {
     rascunhos: 'rascunho',
     enviados: 'enviado',
-    aceitos: 'aceito',
+    aceitos: ['aceito', 'concluído', 'concluido'],
     lixeira: 'cancelado'
   };
 
@@ -1361,17 +1369,13 @@ async function renderRecords(view) {
 }
 
 function paintRecordList(view, expectedStatus) {
+  const expected = Array.isArray(expectedStatus) ? expectedStatus : [expectedStatus];
   const records = state.records
-    .filter(
-      (record) =>
-        String(
-          record.Status ||
-            record.status ||
-            recordData(record).status ||
-            ''
-        ).toLowerCase() === expectedStatus
-    )
+    .filter((record) => expected.includes(recordStatus(record)))
     .sort(sortRecordsNewestFirst);
+  if (view === 'aceitos') {
+    records.sort((a, b) => Number(isConcludedRecord(a)) - Number(isConcludedRecord(b)));
+  }
 
   elements.recordsList.replaceChildren();
   if (!records.length) {
@@ -1400,7 +1404,9 @@ function createRecordCard(record, view) {
     clientBlock.appendChild(alert);
   }
   if (view === 'aceitos') {
-    const execution = getExecutionVisualState(data, record);
+    const execution = isConcludedRecord(record)
+      ? { kind: 'done', label: 'Concluído', error: '' }
+      : getExecutionVisualState(data, record);
     card.classList.add(`execution-${execution.kind}`);
     const badge = document.createElement('span');
     badge.className = `execution-status execution-status-${execution.kind}`;
@@ -1409,6 +1415,10 @@ function createRecordCard(record, view) {
     clientBlock.appendChild(badge);
   }
 
+  const metaBlock = view === 'aceitos'
+    ? scheduleBlock(data)
+    : recordBlock('Atualizado em', record['Atualizado em'] || record['Data Criação'] || '—', 'record-meta');
+
   card.append(
     recordBlock(
       'Fólio',
@@ -1416,7 +1426,7 @@ function createRecordCard(record, view) {
       'record-folio'
     ),
     clientBlock,
-    recordBlock('Atualizado em', record['Atualizado em'] || record['Data Criação'] || '—', 'record-meta')
+    metaBlock
   );
 
   const value = document.createElement('div');
@@ -1443,6 +1453,32 @@ function recordBlock(label, value, className) {
   strong.title = value;
   block.append(span, strong);
   return block;
+}
+
+function scheduleBlock(data) {
+  const block = document.createElement('div');
+  block.className = 'record-meta record-schedule';
+  const label = document.createElement('span');
+  label.textContent = 'Previsto para';
+  const value = document.createElement('strong');
+  value.textContent = data.dataRealizacao || '—';
+  value.title = data.dataRealizacao || '';
+  const payment = document.createElement('small');
+  payment.textContent = data.condicaoPagamento || '';
+  payment.title = data.condicaoPagamento || '';
+  block.append(label, value, payment);
+  return block;
+}
+
+function recordStatus(record) {
+  return String(
+    record.Status || record.status || recordData(record).status || ''
+  ).toLowerCase();
+}
+
+function isConcludedRecord(record) {
+  const status = recordStatus(record);
+  return status === 'concluído' || status === 'concluido';
 }
 
 function createRecordActions(record, data, view) {
@@ -1514,12 +1550,13 @@ function createRecordActions(record, data, view) {
 function createPaymentEditor(record, data) {
   const editor = document.createElement('div');
   editor.className = 'payment-editor';
+  const currentStatus = String(data.status || record.Status || 'Aceito');
 
   const label = document.createElement('label');
   const checkbox = document.createElement('input');
   checkbox.type = 'checkbox';
   checkbox.checked = Boolean(data.pago) || String(record['Pago?']).toLowerCase() === 'sim';
-  label.append(checkbox, document.createTextNode('Pago'));
+  label.append(checkbox, document.createTextNode('Recebido'));
 
   const date = document.createElement('input');
   date.type = 'date';
@@ -1535,7 +1572,7 @@ function createPaymentEditor(record, data) {
   save.addEventListener('click', async () => {
     setBusy(save, true, 'Salvando...');
     try {
-      await updateRecordStatus(data.folio, 'Aceito', checkbox.checked, date.value, false);
+      await updateRecordStatus(data.folio, currentStatus, checkbox.checked, date.value, false);
       save.textContent = 'Salvo';
       setTimeout(() => {
         save.textContent = 'Salvar pagamento';
@@ -1552,6 +1589,10 @@ function createPaymentEditor(record, data) {
   editor.append(label, date, save);
   appendPdfDownload(editor, record, data);
 
+  const nfseButton = actionButton('Emitir nota fiscal', 'button-primary');
+  nfseButton.addEventListener('click', () => openNfsePanel(record, data));
+  editor.appendChild(nfseButton);
+
   const progressButton = actionButton('Atualizar andamento', 'button-secondary');
   progressButton.addEventListener('click', () =>
     updateExecutionProgress(record, progressButton)
@@ -1565,8 +1606,30 @@ function createPaymentEditor(record, data) {
   return editor;
 }
 
+async function openNfsePanel(record, data) {
+  const folio = data.folio || record.Folio || '';
+  elements.nfseTitle.textContent = folio ? `Resumo NFS-e — Fólio ${folio}` : 'Resumo NFS-e';
+  elements.nfseContent.replaceChildren();
+  showView('nfse');
+
+  if (!window.CORDEL_NFSE) {
+    elements.nfseContent.textContent = 'O módulo nfse-resumo.js não foi carregado.';
+    return;
+  }
+
+  try {
+    await window.CORDEL_NFSE.carregar();
+    window.CORDEL_NFSE.abrirPainel(elements.nfseContent, data, record);
+  } catch (error) {
+    elements.nfseContent.textContent = friendlyError(
+      error,
+      'Não foi possível carregar os dados fiscais (data/cnae-fiscal.json).'
+    );
+  }
+}
+
 function appendPdfDownload(container, record, data) {
-  const pdfUrl = record['URL PDF'] || data.urlPdf;
+  const pdfUrl = record['URL PDF'] || data.urlPdf || data.pdfViewUrl;
   if (!pdfUrl) return;
   const link = document.createElement('a');
   link.className = 'button button-dark';

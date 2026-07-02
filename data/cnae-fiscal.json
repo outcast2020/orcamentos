@@ -1,0 +1,508 @@
+{
+  "_meta": {
+    "titulo": "Cordel 2.0 — dados fiscais CNAE→NFS-e (Salvador)",
+    "versao": "1.0",
+    "fontes": [
+      "SEFAZ Salvador — CNAE x Item da Lista (2024)",
+      "Decreto 33.434/2021 e alterações (CTISS; Dec. 41.037/2025 desmembrou 17.02)",
+      "Receita Federal — Anexo VIII v1.00.00 (NBS, cIndOp, cClassTrib)",
+      "LC 116/2003 e Lei 7.186/2006"
+    ],
+    "notas": [
+      "aliquota=5% (regime normal). No Simples Nacional, usar a alíquota do anexo — confirmar com contador.",
+      "revisar=true: NBS/cIndOp/cClassTrib a confirmar no Anexo VIII (tabela é versão inicial).",
+      "ctissFmt é como o Nota Salvador exibe (ex.: 0104-0/01); ctiss são os 7 dígitos."
+    ]
+  },
+  "prestador": {
+    "cnpj": "66.466.887/0001-16",
+    "razaoSocial": "CORDEL 2.0 INOVA SIMPLES (I.S.)",
+    "municipio": "Salvador",
+    "uf": "BA",
+    "tributacao": "Tributado em Salvador"
+  },
+  "aliquotaPadrao": 5.0,
+  "indicadorOperacaoPadrao": {
+    "codigo": "100301",
+    "descricao": "Domicílio principal do adquirente"
+  },
+  "classificacaoTributariaPadrao": {
+    "codigo": "000001",
+    "descricao": "Situações tributadas integralmente pelo IBS e CBS"
+  },
+  "cnaes": [
+    {
+      "cnae": "6201-5/01",
+      "descricao": "Desenvolvimento de programas de computador sob encomenda",
+      "tipo": "Principal",
+      "servicos": [
+        {
+          "default": true,
+          "item": "1.04",
+          "codServico": "00104",
+          "descServico": "Elaboração de programas de computadores, inclusive de jogos eletrônicos",
+          "ctiss": "0104001",
+          "ctissFmt": "0104-0/01",
+          "descCtiss": "Elaboração de programas de computadores",
+          "nbs": "1.1502.10.00",
+          "descNbs": "Serviços de projeto, desenvolvimento e instalação de aplicativos e programas não personalizados",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        },
+        {
+          "default": false,
+          "item": "1.01",
+          "codServico": "00101",
+          "descServico": "Análise e desenvolvimento de sistemas",
+          "ctiss": "0101001",
+          "ctissFmt": "0101-0/01",
+          "descCtiss": "Análise de sistemas",
+          "nbs": "1.1502.20.00",
+          "descNbs": "Aplicativos e programas personalizados (customizados)",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        },
+        {
+          "default": false,
+          "item": "1.02",
+          "codServico": "00102",
+          "descServico": "Programação",
+          "ctiss": "0102001",
+          "ctissFmt": "0102-0/01",
+          "descCtiss": "Programação",
+          "nbs": "1.1502.10.00",
+          "descNbs": "Aplicativos e programas não personalizados",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        },
+        {
+          "default": false,
+          "item": "1.08",
+          "codServico": "00108",
+          "descServico": "Planejamento, confecção, manutenção e atualização de páginas eletrônicas",
+          "ctiss": "0108002",
+          "ctissFmt": "0108-0/02",
+          "descCtiss": "Confecção de páginas eletrônicas",
+          "nbs": "1.1502.30.00",
+          "descNbs": "Estruturas e conteúdo de páginas eletrônicas",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "6204-0/00",
+      "descricao": "Consultoria em tecnologia da informação",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "1.06",
+          "codServico": "00106",
+          "descServico": "Assessoria e consultoria em informática",
+          "ctiss": "0106001",
+          "ctissFmt": "0106-0/01",
+          "descCtiss": "Assessoria e Consultoria em informática",
+          "nbs": "1.1501.10.00",
+          "descNbs": "Serviços de consultoria em tecnologia da informação (TI)",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "6201-5/02",
+      "descricao": "Web design",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "1.08",
+          "codServico": "00108",
+          "descServico": "Planejamento, confecção, manutenção e atualização de páginas eletrônicas",
+          "ctiss": "0108002",
+          "ctissFmt": "0108-0/02",
+          "descCtiss": "Confecção de páginas eletrônicas",
+          "nbs": "1.1502.30.00",
+          "descNbs": "Estruturas e conteúdo de páginas eletrônicas",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "7220-7/00",
+      "descricao": "Pesquisa e desenvolvimento experimental em ciências sociais e humanas",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "2.01",
+          "codServico": "00201",
+          "descServico": "Serviços de pesquisas e desenvolvimento de qualquer natureza",
+          "ctiss": "0201001",
+          "ctissFmt": "0201-0/01",
+          "descCtiss": "Serviços de pesquisas e desenvolvimento de qualquer natureza",
+          "nbs": "1.1202.90.00",
+          "descNbs": "P&D em ciências sociais e humanidades",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "8599-6/04",
+      "descricao": "Treinamento em desenvolvimento profissional e gerencial",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "8.02",
+          "codServico": "00802",
+          "descServico": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos",
+          "ctiss": "0802001",
+          "ctissFmt": "0802-0/01",
+          "descCtiss": "Instrução e treinamento em geral, inclusive de desenvolvimento profissional e gerencial",
+          "nbs": "1.2205",
+          "descNbs": "Outros serviços educacionais, incluindo de treinamento (posição)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "8550-3/02",
+      "descricao": "Atividades de apoio à educação, exceto caixas escolares",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "8.02",
+          "codServico": "00802",
+          "descServico": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos",
+          "ctiss": "0802003",
+          "ctissFmt": "0802-0/03",
+          "descCtiss": "Orientação pedagógica, educacional e avaliação de conhecimentos",
+          "nbs": "1.2205",
+          "descNbs": "Serviços de apoio aos serviços educacionais",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "8599-6/03",
+      "descricao": "Treinamento em informática",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "8.02",
+          "codServico": "00802",
+          "descServico": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos",
+          "ctiss": "0802010",
+          "ctissFmt": "0802-0/10",
+          "descCtiss": "Cursos de informática",
+          "nbs": "1.2205",
+          "descNbs": "Outros serviços educacionais/treinamento",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "8592-9/99",
+      "descricao": "Ensino de arte e cultura não especificado anteriormente",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "8.02",
+          "codServico": "00802",
+          "descServico": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos",
+          "ctiss": "0802005",
+          "ctissFmt": "0802-0/05",
+          "descCtiss": "Cursos de música, dança, artes plásticas, cênicas, visuais, circense e outros de arte e cultura",
+          "nbs": "1.2205",
+          "descNbs": "Serviços educacionais/culturais com enfoque educacional",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "5811-5/00",
+      "descricao": "Edição de livros",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "17.02",
+          "codServico": "01702",
+          "descServico": "Redação, edição, revisão e congêneres",
+          "ctiss": "1702008",
+          "ctissFmt": "1702-0/08",
+          "descCtiss": "Redação, edição, revisão e congêneres",
+          "nbs": "1.1806.53.00",
+          "descNbs": "Serviços de preparação de documentos",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        },
+        {
+          "default": false,
+          "item": "10.03",
+          "codServico": "01003",
+          "descServico": "Agenciamento, corretagem ou intermediação de direitos de propriedade industrial, artística ou literária",
+          "ctiss": "1003001",
+          "ctissFmt": "1003-0/01",
+          "descCtiss": "Agenciamento/intermediação de direitos artístico-literários",
+          "nbs": "1.11",
+          "descNbs": "Cessão/licenciamento de direitos (a confirmar)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "5819-1/00",
+      "descricao": "Edição de cadastros, listas e de outros produtos gráficos",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "17.02",
+          "codServico": "01702",
+          "descServico": "Redação, edição, revisão e congêneres",
+          "ctiss": "1702008",
+          "ctissFmt": "1702-0/08",
+          "descCtiss": "Redação, edição, revisão e congêneres",
+          "nbs": "1.1806.53.00",
+          "descNbs": "Serviços de preparação de documentos",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "6399-2/00",
+      "descricao": "Outras atividades de prestação de serviços de informação não especificadas anteriormente",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "17.01",
+          "codServico": "01701",
+          "descServico": "Análise, coleta, compilação e fornecimento de dados e informações",
+          "ctiss": "1701002",
+          "ctissFmt": "1701-0/02",
+          "descCtiss": "Análise, coleta, compilação e fornecimento de dados e informações",
+          "nbs": "1.1806",
+          "descNbs": "Fornecimento de informações (a confirmar)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "7490-1/99",
+      "descricao": "Outras atividades profissionais, científicas e técnicas não especificadas anteriormente",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "17.01",
+          "codServico": "01701",
+          "descServico": "Assessoria/consultoria de qualquer natureza; fornecimento de dados",
+          "ctiss": "1701001",
+          "ctissFmt": "1701-0/01",
+          "descCtiss": "Assessoria/consultoria de qualquer natureza",
+          "nbs": "1.1806",
+          "descNbs": "Consultoria/administrativos (a confirmar)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        },
+        {
+          "default": false,
+          "item": "17.02",
+          "codServico": "01702",
+          "descServico": "Expediente, apoio e infraestrutura administrativa",
+          "ctiss": "1702007",
+          "ctissFmt": "1702-0/07",
+          "descCtiss": "Expediente, secretaria em geral, apoio e infraestrutura administrativa",
+          "nbs": "1.1806.53.00",
+          "descNbs": "Serviços de preparação de documentos",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        },
+        {
+          "default": false,
+          "item": "23.01",
+          "codServico": "02301",
+          "descServico": "Serviços de programação e comunicação visual, desenho industrial e congêneres",
+          "ctiss": "2301001",
+          "ctissFmt": "2301-0/01",
+          "descCtiss": "Serviços de programação e comunicação visual ou congêneres",
+          "nbs": "1.2003",
+          "descNbs": "Serviços de design (a confirmar)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "8599-6/99",
+      "descricao": "Outras atividades de ensino não especificadas anteriormente",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "8.02",
+          "codServico": "00802",
+          "descServico": "Instrução, treinamento, orientação pedagógica e educacional, avaliação de conhecimentos",
+          "ctiss": "0802001",
+          "ctissFmt": "0802-0/01",
+          "descCtiss": "Instrução e treinamento em geral",
+          "nbs": "1.2205",
+          "descNbs": "Outros serviços educacionais, incluindo de treinamento",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        },
+        {
+          "default": false,
+          "item": "17.24",
+          "codServico": "01724",
+          "descServico": "Apresentação de palestras, conferências, seminários e congêneres",
+          "ctiss": "1724001",
+          "ctissFmt": "1724-0/01",
+          "descCtiss": "Apresentação de palestras, conferências, seminários e congêneres",
+          "nbs": "1.2205",
+          "descNbs": "Serviços educacionais/eventos (a confirmar)",
+          "nbsStatus": "Sugerido",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    },
+    {
+      "cnae": "7490-1/01",
+      "descricao": "Serviços de tradução, interpretação e similares",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "17.02",
+          "codServico": "01702",
+          "descServico": "Interpretação, tradução e congêneres",
+          "ctiss": "1702009",
+          "ctissFmt": "1702-0/09",
+          "descCtiss": "Interpretação, tradução e congêneres",
+          "nbs": "1.1806.53.00",
+          "descNbs": "Serviços de preparação de documentos",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": false
+        }
+      ]
+    },
+    {
+      "cnae": "8230-0/01",
+      "descricao": "Serviços de organização de feiras, congressos, exposições e festas",
+      "tipo": "Secundária",
+      "servicos": [
+        {
+          "default": true,
+          "item": "12.08",
+          "codServico": "01208",
+          "descServico": "Feiras, exposições, congressos e congêneres",
+          "ctiss": "1208001",
+          "ctissFmt": "1208-0/01",
+          "descCtiss": "Feiras, exposições, congressos e congêneres",
+          "nbs": "1.1806.63.00",
+          "descNbs": "Assistência e organização de exposições e outros eventos",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        },
+        {
+          "default": false,
+          "item": "17.10",
+          "codServico": "01710",
+          "descServico": "Planejamento, organização e administração de feiras, exposições, congressos",
+          "ctiss": "1710001",
+          "ctissFmt": "1710-0/01",
+          "descCtiss": "Planejamento, organização e administração de feiras/exposições/congressos",
+          "nbs": "1.1806.61.00",
+          "descNbs": "Assistência e organização de convenções",
+          "nbsStatus": "Confirmado",
+          "cIndOp": "100301",
+          "cClassTrib": "000001",
+          "aliquota": 5.0,
+          "revisar": true
+        }
+      ]
+    }
+  ]
+}
