@@ -1366,7 +1366,8 @@ const RAIL_STATE_KEY = 'cordelRailV1';
 const SHELL_NARROW = 760;
 
 function isNarrowShell() {
-  return window.innerWidth < SHELL_NARROW;
+  // Mesma condição da media query do CSS (max-width: 760px), para não divergir no limite.
+  return window.matchMedia(`(max-width: ${SHELL_NARROW}px)`).matches;
 }
 
 function restoreRailState() {
