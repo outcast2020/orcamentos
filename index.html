@@ -49,45 +49,66 @@
   </div>
 
   <div class="app-shell" id="appShell" hidden>
-    <header class="topbar">
-      <a class="brand" href="#gerador" data-view="gerador" aria-label="Novo orçamento">
-        <img
-          src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
-          alt=""
-        >
-        <span>
-          <strong>Cordel 2.0</strong>
-          <small>Orçamentos</small>
-        </span>
-      </a>
+    <aside class="side-rail" id="sideRail" aria-label="Menu de seções">
+      <div class="rail-head">
+        <a class="brand" href="#gerador" data-view="gerador" aria-label="Novo orçamento">
+          <img
+            src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+            alt=""
+          >
+          <span>
+            <strong>Cordel 2.0</strong>
+            <small>Orçamentos</small>
+          </span>
+        </a>
+        <button class="rail-toggle" id="railToggle" type="button" aria-label="Recolher menu" title="Recolher menu">
+          <span aria-hidden="true">«</span>
+        </button>
+      </div>
 
-      <nav class="main-nav" aria-label="Seções do sistema">
-        <button class="nav-button is-active" type="button" data-view="gerador">Novo</button>
-        <button class="nav-button" type="button" data-view="rascunhos">Rascunhos</button>
-        <button class="nav-button" type="button" data-view="enviados">Enviados</button>
-        <button class="nav-button" type="button" data-view="aceitos">Aceitos / execução</button>
-        <button class="nav-button" type="button" data-view="lixeira">Lixeira</button>
+      <nav class="rail-nav" aria-label="Seções do sistema">
+        <button class="nav-button is-active" type="button" data-view="gerador">
+          <span class="nav-icon" aria-hidden="true">✎</span><span class="nav-label">Novo</span>
+        </button>
+        <button class="nav-button" type="button" data-view="rascunhos">
+          <span class="nav-icon" aria-hidden="true">◔</span><span class="nav-label">Rascunhos</span>
+        </button>
+        <button class="nav-button" type="button" data-view="enviados">
+          <span class="nav-icon" aria-hidden="true">➤</span><span class="nav-label">Enviados</span>
+        </button>
+        <button class="nav-button" type="button" data-view="aceitos">
+          <span class="nav-icon" aria-hidden="true">✓</span><span class="nav-label">Aceitos / execução</span>
+        </button>
+        <button class="nav-button" type="button" data-view="lixeira">
+          <span class="nav-icon" aria-hidden="true">🗑</span><span class="nav-label">Lixeira</span>
+        </button>
       </nav>
 
-      <div class="topbar-actions">
+      <div class="rail-foot">
         <span class="mode-badge" id="modeBadge" hidden>Modo local</span>
-        <button
-          class="settings-button"
-          id="settingsButton"
-          type="button"
-          aria-label="Configurações"
-          title="Configurações"
-        >
-          <span aria-hidden="true">⚙</span>
+        <button class="rail-action" id="settingsButton" type="button" aria-label="Configurações" title="Configurações">
+          <span class="nav-icon" aria-hidden="true">⚙</span><span class="nav-label">Configurações</span>
         </button>
-        <a class="button button-ghost button-small" id="officialSiteLink" href="#" target="_blank" rel="noopener">
-          Site
+        <a class="rail-action" id="officialSiteLink" href="#" target="_blank" rel="noopener">
+          <span class="nav-icon" aria-hidden="true">↗</span><span class="nav-label">Site</span>
         </a>
-        <button class="button button-ghost button-small" id="logoutButton" type="button">Sair</button>
+        <button class="rail-action" id="logoutButton" type="button">
+          <span class="nav-icon" aria-hidden="true">⏻</span><span class="nav-label">Sair</span>
+        </button>
       </div>
-    </header>
+    </aside>
 
-    <main>
+    <button class="rail-scrim" id="railScrim" type="button" aria-label="Fechar menu" hidden></button>
+
+    <div class="shell-main">
+      <header class="pipeline-bar" id="pipelineBar">
+        <button class="rail-open-button" id="railOpenButton" type="button" aria-label="Abrir menu">
+          <span aria-hidden="true">☰</span>
+        </button>
+        <div class="pipeline" id="pipeline" aria-label="Fluxo de produção"></div>
+      </header>
+
+    <main class="workspace" id="workspace">
       <section class="generator-view" id="view-gerador">
         <aside class="editor-panel">
           <div class="editor-heading">
@@ -429,6 +450,7 @@
         <div class="nfse-content" id="nfseContent"></div>
       </section>
     </main>
+    </div>
   </div>
 
   <dialog class="settings-dialog" id="settingsDialog" aria-labelledby="settingsTitle">

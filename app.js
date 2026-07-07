@@ -167,6 +167,12 @@ function cacheElements() {
   [
     'loginScreen',
     'appShell',
+    'sideRail',
+    'railToggle',
+    'railOpenButton',
+    'railScrim',
+    'pipeline',
+    'workspace',
     'loginForm',
     'senhaInput',
     'loginButton',
@@ -285,6 +291,19 @@ function bindEvents() {
     if (event.target === elements.cancelQuoteDialog) closeCancelQuoteDialog();
   });
   elements.nfseBackButton.addEventListener('click', () => showView('aceitos'));
+  elements.railToggle.addEventListener('click', toggleRailCollapsed);
+  elements.railOpenButton.addEventListener('click', () => setRailDrawer(true));
+  elements.railScrim.addEventListener('click', () => setRailDrawer(false));
+  elements.pipeline.addEventListener('click', onPipelineClick);
+  elements.nfseContent.addEventListener('input', () => {
+    if (!elements['view-nfse'].hidden) updateNotaPipelineStage();
+  });
+  elements.nfseContent.addEventListener('click', () => {
+    if (!elements['view-nfse'].hidden) {
+      window.requestAnimationFrame(updateNotaPipelineStage);
+    }
+  });
+  window.addEventListener('resize', handleShellResize);
   elements.newQuoteButton.addEventListener('click', () => resetQuote(true));
   elements.addItemButton.addEventListener('click', addItem);
   elements.saveDraftButton.addEventListener('click', () => saveQuote('Rascunho'));
@@ -305,6 +324,7 @@ function bindEvents() {
     control.addEventListener('click', (event) => {
       event.preventDefault();
       showView(control.dataset.view);
+      if (isNarrowShell()) setRailDrawer(false);
     });
   });
 }
@@ -839,6 +859,7 @@ function enterApp() {
   elements.appShell.hidden = false;
   elements.modeBadge.hidden = !state.localMode;
   if (!state.folio) elements.taxaISS.value = String(state.settings.issDefault);
+  restoreRailState();
   populateCnaes();
   updateCustomCnaeFields();
   updatePreview();
@@ -987,6 +1008,7 @@ function applySaveResult(result, data = {}) {
     : 'Novo orçamento';
   updatePreview();
   updatePdfActionState();
+  if (!elements['view-gerador'].hidden) renderPipeline('gerador');
 }
 
 async function downloadPdf() {
@@ -1334,6 +1356,229 @@ function showView(view) {
   if (!isGenerator && !isNfse) {
     renderRecords(view);
   }
+
+  if (!isNfse) renderPipeline(view);
+}
+
+// --- Trilho lateral (rail) ---------------------------------------------------
+
+const RAIL_STATE_KEY = 'cordelRailV1';
+const SHELL_NARROW = 760;
+
+function isNarrowShell() {
+  return window.innerWidth < SHELL_NARROW;
+}
+
+function restoreRailState() {
+  const collapsed = localStorage.getItem(RAIL_STATE_KEY) === 'collapsed';
+  elements.appShell.classList.toggle('rail-collapsed', collapsed && !isNarrowShell());
+  setRailDrawer(false);
+}
+
+function toggleRailCollapsed() {
+  if (isNarrowShell()) {
+    setRailDrawer(!elements.appShell.classList.contains('rail-open'));
+    return;
+  }
+  const collapsed = elements.appShell.classList.toggle('rail-collapsed');
+  localStorage.setItem(RAIL_STATE_KEY, collapsed ? 'collapsed' : 'open');
+}
+
+function setRailDrawer(open) {
+  const active = Boolean(open) && isNarrowShell();
+  elements.appShell.classList.toggle('rail-open', active);
+  elements.railScrim.hidden = !active;
+  document.body.classList.toggle('rail-locked', active);
+}
+
+function handleShellResize() {
+  if (isNarrowShell()) {
+    elements.appShell.classList.remove('rail-collapsed');
+    return;
+  }
+  elements.appShell.classList.remove('rail-open');
+  elements.railScrim.hidden = true;
+  document.body.classList.remove('rail-locked');
+  elements.appShell.classList.toggle(
+    'rail-collapsed',
+    localStorage.getItem(RAIL_STATE_KEY) === 'collapsed'
+  );
+}
+
+// --- Fluxo de produção (pipeline superior) -----------------------------------
+
+const QUOTE_STAGES = [
+  { key: 'rascunho', label: 'Rascunho', view: 'rascunhos' },
+  { key: 'enviado', label: 'Enviado', view: 'enviados' },
+  { key: 'aceito', label: 'Aceito / execução', view: 'aceitos' },
+  { key: 'concluido', label: 'Concluído', view: 'aceitos' }
+];
+
+const NOTA_STAGES = [
+  { key: 'aceito', label: 'Orçamento aceito' },
+  { key: 'resumo', label: 'Resumo gerado' },
+  { key: 'tomador', label: 'Preencher tomador' },
+  { key: 'emitir', label: 'Copiar e emitir' }
+];
+
+function quoteStageFromStatus(status) {
+  switch (String(status || '').toLowerCase()) {
+    case 'enviado':
+      return 1;
+    case 'aceito':
+      return 2;
+    case 'concluído':
+    case 'concluido':
+      return 3;
+    default:
+      return 0;
+  }
+}
+
+function pipelineStageForView(view) {
+  switch (view) {
+    case 'gerador':
+      return quoteStageFromStatus(state.quoteStatus);
+    case 'rascunhos':
+      return 0;
+    case 'enviados':
+      return 1;
+    case 'aceitos':
+      return 2;
+    default:
+      return -1;
+  }
+}
+
+function renderPipeline(view, context = {}) {
+  if (view === 'nfse') {
+    renderPipelineSteps(NOTA_STAGES, 2, {
+      flow: 'nota',
+      crumb: buildNotaCrumb(context)
+    });
+    return;
+  }
+
+  if (view === 'lixeira') {
+    renderPipelineSteps(QUOTE_STAGES, -1, { flow: 'quote', cancelled: true });
+    return;
+  }
+
+  renderPipelineSteps(QUOTE_STAGES, pipelineStageForView(view), { flow: 'quote' });
+}
+
+function renderPipelineSteps(stages, activeIndex, options = {}) {
+  const pipeline = elements.pipeline;
+  pipeline.classList.remove('is-expanded');
+  pipeline.classList.toggle('pipeline-cancelled', Boolean(options.cancelled));
+  pipeline.dataset.flow = options.flow || 'quote';
+  pipeline.replaceChildren();
+
+  const inner = document.createElement('div');
+  inner.className = 'pipeline-inner';
+
+  if (options.crumb) {
+    const crumb = document.createElement('p');
+    crumb.className = 'pipeline-crumb';
+    crumb.textContent = options.crumb;
+    inner.appendChild(crumb);
+  }
+
+  const track = document.createElement('div');
+  track.className = 'pipeline-track';
+
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  chip.className = 'pipeline-chip';
+  chip.setAttribute('aria-label', 'Mostrar etapas do fluxo');
+  const chipLabel = options.cancelled
+    ? 'Cancelado'
+    : `Etapa ${Math.max(0, activeIndex) + 1}/${stages.length} · ${stages[Math.max(0, activeIndex)].label}`;
+  chip.textContent = chipLabel;
+  track.appendChild(chip);
+
+  const list = document.createElement('ol');
+  list.className = 'pipeline-steps';
+
+  stages.forEach((stage, index) => {
+    const item = document.createElement('li');
+    item.className = 'pipeline-step';
+    if (!options.cancelled && index < activeIndex) item.classList.add('is-done');
+    if (!options.cancelled && index === activeIndex) item.classList.add('is-active');
+    item.dataset.stageKey = stage.key;
+
+    const marker = document.createElement('span');
+    marker.className = 'pipeline-marker';
+    marker.textContent = String(index + 1);
+
+    const label = document.createElement('span');
+    label.className = 'pipeline-label';
+    label.textContent = stage.label;
+
+    if (options.flow === 'quote' && stage.view) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'pipeline-step-button';
+      button.dataset.pipeView = stage.view;
+      button.append(marker, label);
+      item.appendChild(button);
+    } else {
+      item.append(marker, label);
+    }
+
+    list.appendChild(item);
+  });
+
+  track.appendChild(list);
+  inner.appendChild(track);
+
+  if (options.cancelled) {
+    const badge = document.createElement('span');
+    badge.className = 'pipeline-offpath';
+    badge.textContent = 'Cancelado';
+    inner.appendChild(badge);
+  }
+
+  pipeline.appendChild(inner);
+}
+
+function buildNotaCrumb(context) {
+  const parts = ['Aceitos'];
+  if (context.folio) parts.push(`Fólio ${context.folio}`);
+  if (context.cliente) parts.push(context.cliente);
+  parts.push('Nota fiscal');
+  return parts.join('  ·  ');
+}
+
+function updateNotaPipelineStage() {
+  const pending = [
+    ...elements.nfseContent.querySelectorAll('.nfse-campo[data-obrigatorio]')
+  ].filter((campo) => {
+    const input = campo.querySelector('input, textarea, select');
+    return !input || !String(input.value || '').trim();
+  }).length;
+  const activeIndex = pending > 0 ? 2 : 3;
+  elements.pipeline.querySelectorAll('.pipeline-step').forEach((item, index) => {
+    item.classList.toggle('is-done', index < activeIndex);
+    item.classList.toggle('is-active', index === activeIndex);
+  });
+  const chip = elements.pipeline.querySelector('.pipeline-chip');
+  if (chip) {
+    chip.textContent = `Etapa ${activeIndex + 1}/${NOTA_STAGES.length} · ${NOTA_STAGES[activeIndex].label}`;
+  }
+}
+
+function onPipelineClick(event) {
+  const chip = event.target.closest('.pipeline-chip');
+  if (chip) {
+    elements.pipeline.classList.toggle('is-expanded');
+    return;
+  }
+  const stepButton = event.target.closest('[data-pipe-view]');
+  if (stepButton) {
+    showView(stepButton.dataset.pipeView);
+    if (isNarrowShell()) setRailDrawer(false);
+  }
 }
 
 async function renderRecords(view) {
@@ -1608,9 +1853,11 @@ function createPaymentEditor(record, data) {
 
 async function openNfsePanel(record, data) {
   const folio = data.folio || record.Folio || '';
+  const cliente = data.solicitadoPor || record.Cliente || '';
   elements.nfseTitle.textContent = folio ? `Resumo NFS-e — Fólio ${folio}` : 'Resumo NFS-e';
   elements.nfseContent.replaceChildren();
   showView('nfse');
+  renderPipeline('nfse', { folio, cliente });
 
   if (!window.CORDEL_NFSE) {
     elements.nfseContent.textContent = 'O módulo nfse-resumo.js não foi carregado.';
@@ -1620,6 +1867,7 @@ async function openNfsePanel(record, data) {
   try {
     await window.CORDEL_NFSE.carregar();
     window.CORDEL_NFSE.abrirPainel(elements.nfseContent, data, record);
+    updateNotaPipelineStage();
   } catch (error) {
     elements.nfseContent.textContent = friendlyError(
       error,
@@ -2036,6 +2284,7 @@ function resetQuote(confirmReset) {
   updateDescriptionSuggestions();
   updatePreview();
   updatePdfActionState();
+  renderPipeline('gerador');
   setMessage(elements.statusMessage, '', '');
 }
 
