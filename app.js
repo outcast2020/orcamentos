@@ -124,7 +124,7 @@ const state = {
   suggestions: [],
   items: [newItem()],
   settings: {
-    issDefault: 5,
+    issDefault: 6,
     cnaes: cloneCnaes(DEFAULT_CNAES)
   },
   settingsDraft: []
@@ -386,7 +386,7 @@ function applySettings(settings) {
   state.settings = {
     issDefault: Number.isFinite(issDefault) && issDefault >= 0 && issDefault <= 100
       ? issDefault
-      : 5,
+      : 6,
     cnaes: cnaes.length ? cnaes : cloneCnaes(DEFAULT_CNAES)
   };
 
@@ -466,7 +466,7 @@ async function saveSettings(event) {
   const cnaes = normalizeCnaes(state.settingsDraft);
 
   if (!Number.isFinite(issDefault) || issDefault < 0 || issDefault > 100) {
-    setMessage(elements.settingsMessage, 'Informe um ISS entre 0% e 100%.', 'error');
+    setMessage(elements.settingsMessage, 'Informe um percentual de impostos entre 0% e 100%.', 'error');
     elements.settingsIss.focus();
     return;
   }
@@ -2202,7 +2202,7 @@ function loadQuote(record) {
   setCnaeValue(data.cnae || '');
   elements.tituloServico.value = data.tituloServico || '';
   elements.descricaoServico.value = data.descricaoServico || '';
-  elements.taxaISS.value = Number.isFinite(Number(data.taxaISS)) ? data.taxaISS : 5;
+  elements.taxaISS.value = Number.isFinite(Number(data.taxaISS)) ? data.taxaISS : 6;
   elements.dataRealizacao.value = data.dataRealizacao || '';
   elements.validadeDias.value = data.validadeDias || 20;
   elements.localRealizacao.value = data.localRealizacao || '';
@@ -2250,7 +2250,7 @@ function normalizeItems(items, data) {
   }
 
   const total = parseNumber(data.valorTotal);
-  const rate = parseNumber(data.taxaISS) || 5;
+  const rate = parseNumber(data.taxaISS) || 6;
   const base = parseNumber(data.subtotal) || (total ? total / (1 + rate / 100) : 0);
   return [newItem({ nome: 'Honorários / serviços', valor: base })];
 }

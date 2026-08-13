@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Gerador de orçamentos comerciais da Cordel 2.0 Inova Simples.">
+  <meta name="description" content="Gerador de orçamentos comerciais da Cordel 2.0 - Educação, Cultura e Inovação.">
   <meta name="theme-color" content="#11120f">
   <title>Orçamentos | Cordel 2.0</title>
   <link rel="icon" type="image/png" sizes="40x40" href="assets/faviconESCURI.png">
@@ -19,11 +19,11 @@
     <div class="login-card">
       <img
         class="login-logo"
-        src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+        src="assets/LOGO-CORDEL-2.0.png"
         alt="Cordel 2.0"
       >
       <p class="eyebrow">Bem-vinda, equipe</p>
-      <h1>Cordel 2.0 Inova Simples (I.S.)</h1>
+      <h1>Cordel 2.0 - Educação, Cultura e Inovação</h1>
       <p class="login-copy">Entre para acessar o gerador e acompanhar os orçamentos.</p>
 
       <form id="loginForm" class="login-form">
@@ -53,7 +53,7 @@
       <div class="rail-head">
         <a class="brand" href="#gerador" data-view="gerador" aria-label="Novo orçamento">
           <img
-            src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+            src="assets/LOGO-CORDEL-2.0.png"
             alt=""
           >
           <span>
@@ -234,21 +234,25 @@
               </button>
 
               <div class="tax-row">
-                <label for="taxaISS">ISS incluído no total</label>
+                <label for="taxaISS">Impostos incluídos no total</label>
                 <div class="percent-input">
-                  <input id="taxaISS" name="taxaISS" type="number" value="5" min="0" max="100" step="0.1">
+                  <input id="taxaISS" name="taxaISS" type="number" value="6" min="0" max="100" step="0.01">
                   <span>%</span>
                 </div>
               </div>
 
               <div class="finance-notice">
                 <strong>Orientação ao financeiro</strong>
-                <span>O valor final do orçamento deve incluir os 5% de ISS da nota fiscal.</span>
+                <span>
+                  O valor final deve incluir os 6% do Simples Nacional (Anexo III, faixa 1).
+                  Desses 6%, cerca de 33,5% correspondem ao ISS — 2,01% da receita — que é o
+                  percentual informado na NFS-e.
+                </span>
               </div>
 
               <div class="totals-card" aria-live="polite">
                 <div><span>Subtotal</span><strong id="editorSubtotal">R$ 0,00</strong></div>
-                <div><span>ISS</span><strong id="editorIss">R$ 0,00</strong></div>
+                <div><span>Impostos</span><strong id="editorIss">R$ 0,00</strong></div>
                 <div class="total-line"><span>Total</span><strong id="editorTotal">R$ 0,00</strong></div>
               </div>
             </section>
@@ -344,7 +348,7 @@
               <header class="document-header">
                 <img
                   class="document-logo"
-                  src="assets/LOGOMARCA-CORDEL%202.0%20Inova%20Simples.png"
+                  src="assets/LOGO-CORDEL-2.0.png"
                   alt="Cordel 2.0"
                 >
                 <div class="document-title">
@@ -362,11 +366,18 @@
               <section class="document-section">
                 <p class="document-kicker">Dados da proposta</p>
                 <div class="company-grid">
-                  <div><span>Empresa</span><strong>Cordel 2.0 Inova Simples (I.S.)</strong></div>
-                  <div><span>CNPJ</span><strong>66.466.887/0001-16</strong></div>
+                  <div><span>Empresa</span><strong>Cordel 2.0 - Educação, Cultura e Inovação</strong></div>
+                  <div><span>CNPJ</span><strong>68.110.384/0001-39</strong></div>
                   <div class="company-grid-wide"><span>Atividade / CNAE</span><strong id="docCnae">—</strong></div>
                   <div><span>Solicitado por</span><strong id="docSolicitado">—</strong></div>
                   <div><span>Responsável</span><strong id="docAutor">—</strong></div>
+                  <div class="company-grid-wide">
+                    <span>Endereço</span>
+                    <strong>
+                      Av. Tancredo Neves, 2539 — Sala 2609 — Edif. CEO Salvador Shopping,
+                      Torre Londres — Caminho das Árvores, Salvador/BA — CEP 41.820-021
+                    </strong>
+                  </div>
                 </div>
               </section>
 
@@ -394,7 +405,7 @@
                         <td id="docSubtotal">R$ 0,00</td>
                       </tr>
                       <tr>
-                        <td colspan="2">Impostos municipais (ISS — <span id="docIssRate">5%</span>)</td>
+                        <td colspan="2">Impostos (Simples Nacional — <span id="docIssRate">6%</span>)</td>
                         <td id="docIss">R$ 0,00</td>
                       </tr>
                       <tr class="document-total-row">
@@ -418,7 +429,7 @@
                 </div>
 
                 <footer class="document-footer">
-                  <span>Cordel 2.0 Inova Simples (I.S.)</span>
+                  <span>Cordel 2.0 - Educação, Cultura e Inovação — CNPJ 68.110.384/0001-39</span>
                   <span>contato@cordel2pontozero.com</span>
                 </footer>
               </div>
@@ -465,11 +476,11 @@
 
       <section class="settings-section">
         <div>
-          <h3>ISS padrão</h3>
+          <h3>Impostos padrão</h3>
           <p>Será usado em novos orçamentos. Orçamentos antigos mantêm a taxa registrada.</p>
         </div>
         <div class="percent-input settings-tax">
-          <input id="settingsIss" type="number" min="0" max="100" step="0.1" aria-label="ISS padrão">
+          <input id="settingsIss" type="number" min="0" max="100" step="0.01" aria-label="Impostos padrão">
           <span>%</span>
         </div>
       </section>

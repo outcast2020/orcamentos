@@ -9,19 +9,25 @@
       "LC 116/2003 e Lei 7.186/2006"
     ],
     "notas": [
-      "aliquota=5% (regime normal). No Simples Nacional, usar a alíquota do anexo — confirmar com contador.",
+      "Regime: Simples Nacional, Anexo III, sem fator R. As atividades de ensino do §5º-B do art. 18 da LC 123/2006 vão direto para o Anexo III; o fator R é regra do Anexo V (§5º-I e §5º-J), que não alcança estas atividades.",
+      "aliquota=2,01% — parcela do ISS dentro da alíquota efetiva de 6% da faixa 1 (6% × 33,5%). Ao mudar de faixa, recalcular com a contabilidade.",
+      "O orçamento acresce 6% ao subtotal (DAS inteiro); aqui fica só a parcela do ISS, que é o que a NFS-e pede.",
       "revisar=true: NBS/cIndOp/cClassTrib a confirmar no Anexo VIII (tabela é versão inicial).",
       "ctissFmt é como o Nota Salvador exibe (ex.: 0104-0/01); ctiss são os 7 dígitos."
     ]
   },
   "prestador": {
-    "cnpj": "66.466.887/0001-16",
-    "razaoSocial": "CORDEL 2.0 INOVA SIMPLES (I.S.)",
+    "cnpj": "68.110.384/0001-39",
+    "razaoSocial": "VIDAL, GUERRERO E FARIAS LTDA",
+    "nomeFantasia": "CORDEL 2.0 - EDUCACAO CULTURA E INOVACAO",
+    "logradouro": "AV TANCREDO NEVES, 2539 — SALA 2609 — EDIF CEO SALVADOR SHOPPING TORRE LONDRES",
+    "bairro": "CAMINHO DAS ARVORES",
+    "cep": "41.820-021",
     "municipio": "Salvador",
     "uf": "BA",
     "tributacao": "Tributado em Salvador"
   },
-  "aliquotaPadrao": 5.0,
+  "aliquotaPadrao": 2.01,
   "indicadorOperacaoPadrao": {
     "codigo": "100301",
     "descricao": "Domicílio principal do adquirente"
@@ -49,7 +55,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         },
         {
@@ -65,7 +71,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         },
         {
@@ -81,7 +87,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         },
         {
@@ -97,7 +103,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -120,7 +126,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -143,7 +149,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -166,7 +172,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -189,7 +195,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -212,7 +218,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -235,7 +241,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -258,7 +264,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -281,7 +287,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         },
         {
@@ -297,7 +303,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -320,7 +326,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -343,7 +349,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -366,7 +372,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         },
         {
@@ -382,7 +388,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         },
         {
@@ -398,7 +404,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -421,7 +427,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         },
         {
@@ -437,7 +443,7 @@
           "nbsStatus": "Sugerido",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]
@@ -460,7 +466,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": false
         }
       ]
@@ -483,7 +489,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         },
         {
@@ -499,7 +505,7 @@
           "nbsStatus": "Confirmado",
           "cIndOp": "100301",
           "cClassTrib": "000001",
-          "aliquota": 5.0,
+          "aliquota": 2.01,
           "revisar": true
         }
       ]

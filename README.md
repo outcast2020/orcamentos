@@ -1,6 +1,6 @@
 # Cordel 2.0 — Gerador de Orçamentos
 
-Aplicação web leve para criar, salvar e acompanhar orçamentos comerciais da Cordel 2.0 Inova Simples (I.S.).
+Aplicação web leve para criar, salvar e acompanhar orçamentos comerciais da Cordel 2.0 - Educação, Cultura e Inovação (VIDAL, GUERRERO E FARIAS LTDA — CNPJ 68.110.384/0001-39).
 
 O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Google Apps Script, Google Sheets e Google Drive.
 
@@ -11,10 +11,11 @@ O frontend é estático e pode ser publicado no GitHub Pages. O backend usa Goog
 ## O que o sistema faz
 
 - gera orçamento em visual único, preparado para impressão;
-- calcula automaticamente subtotal, ISS de 5% e valor total;
+- calcula automaticamente subtotal, impostos do Simples Nacional (6%, Anexo III
+  faixa 1) e valor total;
 - aceita vários itens de custo;
 - oferece todos os CNAEs cadastrados e a opção “Outro CNAE”;
-- possui configurações discretas para alterar o ISS padrão e editar CNAEs;
+- possui configurações discretas para alterar o percentual padrão de impostos e editar CNAEs;
 - reaproveita descrições anteriores organizadas pelo CNAE;
 - usa fólio sequencial a partir de `00010`;
 - salva rascunhos e permite retomá-los;
@@ -66,7 +67,7 @@ Recurso-Web/
 │   └── SETUP.md        Publicação passo a passo
 └── assets/
     ├── assinatura-equipe.jpg
-    ├── LOGOMARCA-CORDEL 2.0 Inova Simples.png
+    ├── LOGO-CORDEL-2.0.png
     ├── Capa-LinkedIn.png
     ├── Template.docx
     ├── Fontes/
@@ -91,9 +92,10 @@ Apps Script.
 
 ## Licença
 
-Este é um software proprietário, com todos os direitos reservados à Cordel 2.0
-Inova Simples (I.S.). O uso por terceiros depende de autorização comercial
-escrita e pagamento acordado. Consulte [LICENSE.md](LICENSE.md) e
+Este é um software proprietário, com todos os direitos reservados à VIDAL,
+GUERRERO E FARIAS LTDA (Cordel 2.0 - Educação, Cultura e Inovação). O uso por
+terceiros depende de autorização comercial escrita e pagamento acordado.
+Consulte [LICENSE.md](LICENSE.md) e
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 O `Code.gs` está no `.gitignore` e deve ser mantido diretamente no projeto
@@ -119,5 +121,5 @@ de integrações.
 O frontend funciona em **modo local** enquanto a URL do Apps Script não está configurada. Nesse modo, os registros ficam apenas no armazenamento do navegador e servem para revisão visual. Após configurar `config.js`, a entrada passa a validar a senha no backend e os registros são enviados ao Google.
 
 Configurações feitas no modo local ficam somente naquele navegador. No modo
-online, ISS e CNAEs são guardados nas Propriedades do script e compartilhados
+online, impostos e CNAEs são guardados nas Propriedades do script e compartilhados
 pela equipe.

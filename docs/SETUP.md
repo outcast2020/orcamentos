@@ -43,7 +43,7 @@ localiza ou cria a pasta automaticamente e grava seu ID.
 
 O `setupPlanilha` também cria:
 
-- `APP_SETTINGS`, para ISS padrão e CNAEs editáveis;
+- `APP_SETTINGS`, para o percentual padrão de impostos e CNAEs editáveis;
 - `INTEGRATIONS_CONFIG`, inicialmente desativada.
 
 Credenciais fiscais, bancárias ou da Cora nunca devem ser colocadas no
@@ -125,7 +125,7 @@ Faça este percurso:
 15. repetir a finalização simultaneamente em dois navegadores e executar
     `diagnosticarConcorrenciaEIdempotencia`; as listas de duplicados devem estar vazias;
 16. conferir a linha correspondente na planilha;
-17. abrir a engrenagem de Configurações, alterar o ISS e testar a inclusão e
+17. abrir a engrenagem de Configurações, alterar o percentual de impostos e testar a inclusão e
     remoção de um CNAE.
 
 Depois da primeira atualização, execute uma vez a função `limparDuplicados`
@@ -170,7 +170,9 @@ Para domínio próprio, adicione o domínio nas configurações do GitHub Pages 
 
 - Não renomeie os cabeçalhos da aba `Orçamentos`.
 - Não publique a senha em commits, capturas de tela ou documentação.
-- Ao mudar o percentual de ISS no formulário, o valor fica registrado em cada orçamento.
+- O percentual padrão é 6% — a alíquota efetiva do Simples Nacional (Anexo III, faixa 1).
+  Na NFS-e vai só a parcela de ISS, 2,01%, vinda de `data/cnae-fiscal.json`.
+- Ao mudar o percentual de impostos no formulário, o valor fica registrado em cada orçamento.
 - Rascunhos nunca geram PDF; somente o JSON é atualizado.
 - O PDF definitivo é criado uma única vez na pasta Enviados e depois movido
   para Execução sem mudar de ID.

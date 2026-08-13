@@ -1,11 +1,12 @@
 # Licença proprietária — Todos os direitos reservados
 
-Copyright © 2026 Cordel 2.0 Inova Simples (I.S.)  
-CNPJ 66.466.887/0001-16
+Copyright © 2026 VIDAL, GUERRERO E FARIAS LTDA — Cordel 2.0 - Educação, Cultura e Inovação  
+CNPJ 68.110.384/0001-39
 
 Este software, incluindo seu código-fonte, interface, documentação, estrutura,
-identidade visual e materiais originais, é propriedade da Cordel 2.0 Inova
-Simples (I.S.).
+identidade visual e materiais originais, é propriedade da VIDAL, GUERRERO E
+FARIAS LTDA, que atua sob o nome de fantasia Cordel 2.0 - Educação, Cultura e
+Inovação.
 
 Nenhuma permissão é concedida para copiar, usar, modificar, publicar,
 distribuir, sublicenciar, vender, disponibilizar como serviço, criar obras

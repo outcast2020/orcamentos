@@ -78,7 +78,7 @@ window.CORDEL_NFSE = (function () {
 
   function formatarAliquota(valor) {
     const numero = Number(valor);
-    return (Number.isFinite(numero) ? numero : 5).toFixed(2).replace('.', ',');
+    return (Number.isFinite(numero) ? numero : 2.01).toFixed(2).replace('.', ',');
   }
 
   function formatarValorCampo(valor) {
@@ -173,7 +173,7 @@ window.CORDEL_NFSE = (function () {
         <span class="nfse-rotulo">Aliq. (%)</span>
         <span class="nfse-valor">
           <input type="text" id="nfseAliquota" value="${esc(formatarAliquota(fiscal.aliquota))}" data-copiavel>
-          <small class="nfse-dica">Regime normal: 5,00. No Simples Nacional, confirmar a alíquota com a contabilidade.</small>
+          <small class="nfse-dica">Simples Nacional, Anexo III, faixa 1: 2,01 (parcela do ISS dentro dos 6% do DAS). Ao mudar de faixa, confirmar com a contabilidade.</small>
         </span>
         <button class="nfse-copiar" type="button" title="Copiar valor">copiar</button>
       </div>
@@ -226,6 +226,7 @@ window.CORDEL_NFSE = (function () {
           <h3>Prestador de serviços</h3>
           ${campoCopiavel('CNPJ', prestador.cnpj)}
           ${campoCopiavel('Razão social', prestador.razaoSocial)}
+          ${campoCopiavel('Nome fantasia', prestador.nomeFantasia)}
           ${campoCopiavel('Tributação dos serviços', prestador.tributacao)}
           ${campoCopiavel('Local de prestação — UF', prestador.uf)}
           ${campoCopiavel('Local de prestação — Cidade', prestador.municipio)}
@@ -276,7 +277,8 @@ window.CORDEL_NFSE = (function () {
           ${campoCopiavel('ISS retido pelo tomador', 'Não')}
           <p class="nfse-dica-bloco">
             Total do orçamento: <strong>${esc(formatarBRL(valorTotal))}</strong>
-            (subtotal ${esc(formatarBRL(data.subtotal))} + ISS ${esc(formatarBRL(data.valorISS))} a ${esc(formatarAliquota(data.taxaISS))}%).
+            (subtotal ${esc(formatarBRL(data.subtotal))} + impostos ${esc(formatarBRL(data.valorISS))} a ${esc(formatarAliquota(data.taxaISS))}%).
+            Esse percentual é o Simples Nacional inteiro; na nota vai só a alíquota de ISS acima.
             O Nota Salvador calcula o ISS sobre o valor informado na nota.
           </p>
           ${itensHtml ? `<ul class="nfse-itens">${itensHtml}</ul>` : ''}
@@ -399,7 +401,7 @@ window.CORDEL_NFSE = (function () {
 
     const titulo = document.createElement('p');
     titulo.className = 'nfse-print-titulo';
-    titulo.textContent = `Resumo NFS-e — Fólio ${folio} — Cordel 2.0 Inova Simples (I.S.)`;
+    titulo.textContent = `Resumo NFS-e — Fólio ${folio} — Cordel 2.0 - Educação, Cultura e Inovação`;
     clone.prepend(titulo);
 
     host.appendChild(clone);
