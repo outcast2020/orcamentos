@@ -7,12 +7,15 @@
   <meta name="theme-color" content="#11120f">
   <title>Orçamentos | Cordel 2.0</title>
   <link rel="icon" type="image/png" sizes="40x40" href="assets/faviconESCURI.png">
-  <link rel="stylesheet" href="style.css">
+  <!-- ?v= força o navegador a baixar CSS/JS novos junto com este HTML. O Pages
+       serve o HTML por 10 min e os scripts por 4 h; sem isso, um deploy chega
+       pela metade e o app quebra. Suba a versão a cada deploy. -->
+  <link rel="stylesheet" href="style.css?v=20260814">
   <script defer src="assets/vendor/html2pdf.bundle.min.js"></script>
-  <script defer src="config.js"></script>
-  <script defer src="integrations.js"></script>
-  <script defer src="nfse-resumo.js"></script>
-  <script defer src="app.js"></script>
+  <script defer src="config.js?v=20260814"></script>
+  <script defer src="integrations.js?v=20260814"></script>
+  <script defer src="nfse-resumo.js?v=20260814"></script>
+  <script defer src="app.js?v=20260814"></script>
 </head>
 <body>
   <div class="login-screen" id="loginScreen">
