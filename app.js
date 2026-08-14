@@ -233,7 +233,6 @@ function cacheElements() {
     'docDescricao',
     'docItems',
     'docSubtotal',
-    'docIssRate',
     'docIss',
     'docTotal',
     'docConditionsSection',
@@ -660,7 +659,6 @@ function updatePreview() {
   elements.editorIss.textContent = formatBRL(totals.iss);
   elements.editorTotal.textContent = formatBRL(totals.total);
   elements.docSubtotal.textContent = formatBRL(totals.subtotal);
-  elements.docIssRate.textContent = `${formatDecimal(totals.rate)}%`;
   elements.docIss.textContent = formatBRL(totals.iss);
   elements.docTotal.textContent = formatBRL(totals.total);
 
@@ -2492,13 +2490,6 @@ function formatBRL(value) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL'
-  }).format(parseNumber(value));
-}
-
-function formatDecimal(value) {
-  return new Intl.NumberFormat('pt-BR', {
-    minimumFractionDigits: Number(value) % 1 ? 1 : 0,
-    maximumFractionDigits: 2
   }).format(parseNumber(value));
 }
 
