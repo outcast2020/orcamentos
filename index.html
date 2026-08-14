@@ -10,12 +10,12 @@
   <!-- ?v= força o navegador a baixar CSS/JS novos junto com este HTML. O Pages
        serve o HTML por 10 min e os scripts por 4 h; sem isso, um deploy chega
        pela metade e o app quebra. Suba a versão a cada deploy. -->
-  <link rel="stylesheet" href="style.css?v=20260814">
+  <link rel="stylesheet" href="style.css?v=20260814b">
   <script defer src="assets/vendor/html2pdf.bundle.min.js"></script>
-  <script defer src="config.js?v=20260814"></script>
-  <script defer src="integrations.js?v=20260814"></script>
-  <script defer src="nfse-resumo.js?v=20260814"></script>
-  <script defer src="app.js?v=20260814"></script>
+  <script defer src="config.js?v=20260814b"></script>
+  <script defer src="integrations.js?v=20260814b"></script>
+  <script defer src="nfse-resumo.js?v=20260814b"></script>
+  <script defer src="app.js?v=20260814b"></script>
 </head>
 <body>
   <div class="login-screen" id="loginScreen">
@@ -159,18 +159,31 @@
                 >
               </div>
 
-              <div class="field">
-                <label for="emailCliente">E-mail do cliente</label>
-                <input
-                  id="emailCliente"
-                  name="emailCliente"
-                  type="email"
-                  autocomplete="email"
-                  placeholder="cliente@instituicao.com"
-                  maxlength="180"
-                >
-                <small class="field-help">Usado no acompanhamento comercial e nos alertas internos.</small>
+              <div class="field-grid field-grid-2">
+                <div class="field">
+                  <label for="emailCliente">E-mail do cliente</label>
+                  <input
+                    id="emailCliente"
+                    name="emailCliente"
+                    type="email"
+                    autocomplete="email"
+                    placeholder="cliente@instituicao.com"
+                    maxlength="180"
+                  >
+                </div>
+                <div class="field">
+                  <label for="telefoneCliente">Telefone do cliente</label>
+                  <input
+                    id="telefoneCliente"
+                    name="telefoneCliente"
+                    type="tel"
+                    autocomplete="tel"
+                    placeholder="(71) 90000-0000"
+                    maxlength="40"
+                  >
+                </div>
               </div>
+              <small class="field-help">Aparecem na proposta e são usados no acompanhamento comercial.</small>
 
               <div class="field">
                 <label for="cnae">Atividade / CNAE</label>
@@ -371,9 +384,6 @@
                 <div class="company-grid">
                   <div><span>Empresa</span><strong>Cordel 2.0 - Educação, Cultura e Inovação</strong></div>
                   <div><span>CNPJ</span><strong>68.110.384/0001-39</strong></div>
-                  <div class="company-grid-wide"><span>Atividade / CNAE</span><strong id="docCnae">—</strong></div>
-                  <div><span>Solicitado por</span><strong id="docSolicitado">—</strong></div>
-                  <div><span>Responsável</span><strong id="docAutor">—</strong></div>
                   <div class="company-grid-wide">
                     <span>Endereço</span>
                     <strong>
@@ -381,6 +391,13 @@
                       Torre Londres — Caminho das Árvores, Salvador/BA — CEP 41.820-021
                     </strong>
                   </div>
+                  <div><span>Telefone</span><strong>(71) 99279-9772</strong></div>
+                  <div><span>E-mail</span><strong>contato@cordel2pontozero.com</strong></div>
+                  <div class="company-grid-wide"><span>Atividade / CNAE</span><strong id="docCnae">—</strong></div>
+                  <div><span>Solicitado por</span><strong id="docSolicitado">—</strong></div>
+                  <div><span>Responsável</span><strong id="docAutor">—</strong></div>
+                  <div><span>Cliente — e-mail</span><strong id="docEmailCliente">—</strong></div>
+                  <div><span>Cliente — telefone</span><strong id="docTelefoneCliente">—</strong></div>
                 </div>
               </section>
 
@@ -433,7 +450,7 @@
 
                 <footer class="document-footer">
                   <span>Cordel 2.0 - Educação, Cultura e Inovação — CNPJ 68.110.384/0001-39</span>
-                  <span>contato@cordel2pontozero.com</span>
+                  <span>(71) 99279-9772 · contato@cordel2pontozero.com</span>
                 </footer>
               </div>
             </article>

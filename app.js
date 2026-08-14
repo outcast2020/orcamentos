@@ -198,6 +198,7 @@ function cacheElements() {
     'dataEmissao',
     'solicitadoPor',
     'emailCliente',
+    'telefoneCliente',
     'cnae',
     'customCnaeFields',
     'customCnaeCode',
@@ -229,6 +230,8 @@ function cacheElements() {
     'docCnae',
     'docSolicitado',
     'docAutor',
+    'docEmailCliente',
+    'docTelefoneCliente',
     'docTituloServico',
     'docDescricao',
     'docItems',
@@ -652,6 +655,8 @@ function updatePreview() {
   elements.docCnae.textContent = getSelectedCnae() || '—';
   elements.docSolicitado.textContent = elements.solicitadoPor.value.trim() || '—';
   elements.docAutor.textContent = elements.autorOrcamento.value || '—';
+  elements.docEmailCliente.textContent = elements.emailCliente.value.trim() || '—';
+  elements.docTelefoneCliente.textContent = elements.telefoneCliente.value.trim() || '—';
   elements.docTituloServico.textContent = title || 'Título do serviço';
   elements.docDescricao.textContent = description || 'Descreva o serviço para visualizar a proposta.';
 
@@ -735,6 +740,7 @@ function collectQuoteData(status) {
     cnae: getSelectedCnae(),
     solicitadoPor: elements.solicitadoPor.value.trim(),
     emailCliente: elements.emailCliente.value.trim(),
+    telefoneCliente: elements.telefoneCliente.value.trim(),
     tituloServico: elements.tituloServico.value.trim(),
     descricaoServico: elements.descricaoServico.value.trim(),
     itens: state.items.map((item) => ({
@@ -2197,6 +2203,7 @@ function loadQuote(record) {
   elements.dataEmissao.value = normalizeDateInput(data.dataEmissao) || todayIso();
   elements.solicitadoPor.value = data.solicitadoPor || '';
   elements.emailCliente.value = data.emailCliente || '';
+  elements.telefoneCliente.value = data.telefoneCliente || '';
   setCnaeValue(data.cnae || '');
   elements.tituloServico.value = data.tituloServico || '';
   elements.descricaoServico.value = data.descricaoServico || '';
